@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New Product Request Raised</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+    <tr>
+      <td align="center" style="padding: 40px 15px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 36px 30px; text-align: center;">
+              <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.1); padding: 8px 16px; border-radius: 20px; color: #94a3b8; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
+                Enterprise Procurement System
+              </div>
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">New Request Submitted</h1>
+              <p style="color: #cbd5e1; margin: 8px 0 0 0; font-size: 14px;">A product procurement request has been logged and is awaiting review.</p>
+            </td>
+          </tr>
+
+          <!-- Status Banner -->
+          <tr>
+            <td style="padding: 24px 30px 12px 30px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #fffbeb; border: 1px solid #fef3c7; border-radius: 8px; padding: 14px 18px;">
+                <tr>
+                  <td style="color: #b45309; font-size: 14px; font-weight: 600;">
+                    Current Status: 
+                    <span style="background-color: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; border: 1px solid #fde68a; margin-left: 6px; display: inline-block;">
+                      PENDING FOR APPROVAL
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Details Table -->
+          <tr>
+            <td style="padding: 12px 30px 24px 30px;">
+              <h3 style="color: #1e293b; font-size: 16px; margin: 0 0 16px 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">Request Summary (#{{REQUEST_ID}})</h3>
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size: 14px; color: #334155; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500; width: 40%;">Raised By</td>
+                  <td style="padding: 10px 0; font-weight: 600; color: #0f172a; text-align: right;">{{USER_NAME}} <span style="font-size: 12px; color: #64748b; font-weight: 400;">({{USER_EMAIL}})</span></td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Department</td>
+                  <td style="padding: 10px 0; font-weight: 600; color: #0f172a; text-align: right;">{{DEPT_NAME}}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Product Requested</td>
+                  <td style="padding: 10px 0; font-weight: 600; color: #2563eb; text-align: right;">{{PRODUCT_NAME}}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Quantity</td>
+                  <td style="padding: 10px 0; font-weight: 600; color: #0f172a; text-align: right;">{{QUANTITY}} units</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Price Per Unit</td>
+                  <td style="padding: 10px 0; font-weight: 600; color: #0f172a; text-align: right;">{{PRICE_PER_UNIT}}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #e2e8f0; background-color: #f8fafc;">
+                  <td style="padding: 12px 10px; color: #0f172a; font-weight: 700; font-size: 15px;">Total Estimated Cost</td>
+                  <td style="padding: 12px 10px; font-weight: 700; color: #059669; font-size: 16px; text-align: right;">{{TOTAL_PRICE}}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Submission Date</td>
+                  <td style="padding: 10px 0; font-weight: 500; color: #64748b; text-align: right;">{{SUBMISSION_DATE}}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Remarks Callout -->
+          <tr>
+            <td style="padding: 0 30px 30px 30px;">
+              <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 14px 18px; border-radius: 0 8px 8px 0;">
+                <p style="margin: 0; font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">User Remarks</p>
+                <p style="margin: 6px 0 0 0; font-size: 14px; color: #334155; font-style: italic;">"{{DESCRIPTION}}"</p>
+              </div>
+            </td>
+          </tr>
+
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

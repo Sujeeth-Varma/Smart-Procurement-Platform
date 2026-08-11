@@ -1,0 +1,38 @@
+spring:
+  application:
+    name: Infofys-Intern_project
+  datasource:
+    url: jdbc:mysql://localhost:3306/procurement_db?createDatabaseIfNotExist=true
+    username: root
+    password: Root@1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: infosys.procurement.project.admin@gmail.com
+    password: zphx irpv cxcc pitn
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+jwt:
+  base64key: "w7ZDf0pP6G4kKZ5O7Q4K8y0sQ6M2sN3r9V0dK5xYtF4="
+  expiration: 172800000 # 2days
+
+server:
+  port: 8080
+
+# cors:
+#   allowed-origins: ${FRONTEND_URL}
