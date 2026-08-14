@@ -93,7 +93,8 @@ You can directly import the ready-to-test Postman collection:
 | `GET` | `/api/users` | ADMIN | List all registered users |
 | `GET` | `/api/users/{id}` | ADMIN / Self | Get user profile by ID |
 | `GET` | `/api/request/pending` | ADMIN | List procurement requests pending approval (`procurement_requests` table) |
-| `POST` | `/api/request/{requestId}/status` | ADMIN | Consolidate request approval/rejection taking `status` (`"approve"` or `"reject"`) in request body |
+| `GET` | `/api/request/status?requestId={id}` | ADMIN | Get status and details of a procurement request by `requestId` query param |
+| `POST` | `/api/request/status` | ADMIN | Approve or reject request taking `requestId` and `status` (`"approve"` or `"reject"`) in request body |
 | `DELETE` | `/api/request/{requestId}` | ADMIN | Delete order request record |
 
 ---

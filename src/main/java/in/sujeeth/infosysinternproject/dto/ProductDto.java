@@ -18,7 +18,6 @@ public class ProductDto {
     private Long productId;
     private String name;
     private BigDecimal pricePerProduct;
-    private Integer numberOfQuantities;
     private BigDecimal totalPrice;
     private String categoryName;
     private CategoryDto category;

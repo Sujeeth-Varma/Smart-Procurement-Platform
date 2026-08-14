@@ -102,60 +102,104 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedDemoProductsAndSuppliers(User admin) {
-        if (productRepository.count() == 0) {
-            Department itDept = departmentRepository.findByDepartmentName("IT").orElse(null);
-            Category peripheralsCat = categoryRepository.findByCategoryName("Peripherals").orElse(null);
-            Category electronicsCat = categoryRepository.findByCategoryName("Electronics").orElse(null);
-            Category furnitureCat = categoryRepository.findByCategoryName("Furniture").orElse(null);
+        Department itDept = departmentRepository.findByDepartmentName("IT").orElse(null);
+        Department procurementDept = departmentRepository.findByDepartmentName("Procurement").orElse(null);
+        Category peripheralsCat = categoryRepository.findByCategoryName("Peripherals").orElse(null);
+        Category electronicsCat = categoryRepository.findByCategoryName("Electronics").orElse(null);
+        Category furnitureCat = categoryRepository.findByCategoryName("Furniture").orElse(null);
+        Category officeCat = categoryRepository.findByCategoryName("Office Supplies").orElse(null);
 
-            // Active Catalog Inventory Items (Products)
-            Product mouse = Product.builder()
+        if (productRepository.count() == 0) {
+            Product mouse = productRepository.save(Product.builder()
                     .name("Wireless Mouse")
                     .pricePerProduct(new BigDecimal("800.00"))
-                    .numberOfQuantities(10) // Available inventory stock
                     .category(peripheralsCat)
-                    .description("Ergonomic wireless mouse for engineering team")
+                    .description("Ergonomic wireless optical mouse")
                     .status(ProductStatus.ACTIVE)
                     .createdDate(LocalDateTime.now())
                     .updatedDate(LocalDateTime.now())
-                    .build();
-            Product savedMouse = productRepository.save(mouse);
+                    .build());
 
-            Product monitor = Product.builder()
+            Product monitor = productRepository.save(Product.builder()
                     .name("4K Monitor 27-inch")
                     .pricePerProduct(new BigDecimal("22000.00"))
-                    .numberOfQuantities(5) // Available inventory stock
                     .category(electronicsCat)
                     .description("High-resolution IPS monitor for design and development")
                     .status(ProductStatus.ACTIVE)
                     .createdDate(LocalDateTime.now())
                     .updatedDate(LocalDateTime.now())
-                    .build();
-            Product savedMonitor = productRepository.save(monitor);
+                    .build());
 
-            Product chair = Product.builder()
+            Product keyboard = productRepository.save(Product.builder()
+                    .name("Mechanical Keyboard")
+                    .pricePerProduct(new BigDecimal("3500.00"))
+                    .category(peripheralsCat)
+                    .description("RGB backlit mechanical keyboard")
+                    .status(ProductStatus.ACTIVE)
+                    .createdDate(LocalDateTime.now())
+                    .updatedDate(LocalDateTime.now())
+                    .build());
+
+            Product chair = productRepository.save(Product.builder()
                     .name("Ergonomic Office Chair")
                     .pricePerProduct(new BigDecimal("12500.00"))
-                    .numberOfQuantities(8) // Available inventory stock
                     .category(furnitureCat)
                     .description("Lumbar support mesh chair")
                     .status(ProductStatus.ACTIVE)
                     .createdDate(LocalDateTime.now())
                     .updatedDate(LocalDateTime.now())
-                    .build();
-            Product savedChair = productRepository.save(chair);
+                    .build());
 
-            // Seed Demo Procurement Requests (User Orders)
+            Product desk = productRepository.save(Product.builder()
+                    .name("Standing Desk")
+                    .pricePerProduct(new BigDecimal("18500.00"))
+                    .category(furnitureCat)
+                    .description("Dual-motor electric height adjustable standing desk")
+                    .status(ProductStatus.ACTIVE)
+                    .createdDate(LocalDateTime.now())
+                    .updatedDate(LocalDateTime.now())
+                    .build());
+
+            Product paper = productRepository.save(Product.builder()
+                    .name("A4 Printing Paper Bundle")
+                    .pricePerProduct(new BigDecimal("450.00"))
+                    .category(officeCat)
+                    .description("75 GSM 500 sheets ream printing paper")
+                    .status(ProductStatus.ACTIVE)
+                    .createdDate(LocalDateTime.now())
+                    .updatedDate(LocalDateTime.now())
+                    .build());
+
+            Product webcam = productRepository.save(Product.builder()
+                    .name("HD 1080p Webcam")
+                    .pricePerProduct(new BigDecimal("4200.00"))
+                    .category(electronicsCat)
+                    .description("Full HD video webcam with noise-cancelling mic")
+                    .status(ProductStatus.ACTIVE)
+                    .createdDate(LocalDateTime.now())
+                    .updatedDate(LocalDateTime.now())
+                    .build());
+
+            Product hub = productRepository.save(Product.builder()
+                    .name("USB-C Multiport Hub")
+                    .pricePerProduct(new BigDecimal("2800.00"))
+                    .category(peripheralsCat)
+                    .description("7-in-1 USB-C adapter hub with HDMI and Power Delivery")
+                    .status(ProductStatus.ACTIVE)
+                    .createdDate(LocalDateTime.now())
+                    .updatedDate(LocalDateTime.now())
+                    .build());
+
+            // Demo procurement request
             if (procurementRequestRepository.count() == 0) {
-                // Pending Request Demo
                 ProcurementRequest pendingReq = ProcurementRequest.builder()
-                        .product(savedMonitor)
+                        .product(monitor)
                         .user(admin)
                         .department(itDept)
                         .requestedQuantity(2)
-                        .pricePerUnit(savedMonitor.getPricePerProduct())
-                        .totalPrice(savedMonitor.getPricePerProduct().multiply(new BigDecimal("2")))
-                        .description("Requesting 2 units of 4K Monitor for new engineers")
+                        .pricePerUnit(monitor.getPricePerProduct())
+                        .totalPrice(monitor.getPricePerProduct().multiply(new BigDecimal("2")))
+                        .description("Requesting 2 units of 4K Monitor for team onboarding")
                         .status(ProductStatus.PENDING_FOR_APPROVAL)
                         .createdDate(LocalDateTime.now())
                         .updatedDate(LocalDateTime.now())
@@ -164,106 +208,136 @@ public class DataInitializer implements CommandLineRunner {
 
                 requestTrackingRepository.save(RequestTracking.builder()
                         .procurementRequest(savedPending)
-                        .product(savedMonitor)
+                        .product(monitor)
                         .actionBy(admin)
                         .status(ProductStatus.PENDING_FOR_APPROVAL)
                         .remarks("Procurement request submitted")
                         .actionTimestamp(LocalDateTime.now())
                         .build());
-
-                // Approved Request Demo
-                ProcurementRequest activeReq = ProcurementRequest.builder()
-                        .product(savedMouse)
-                        .user(admin)
-                        .department(itDept)
-                        .requestedQuantity(2)
-                        .pricePerUnit(savedMouse.getPricePerProduct())
-                        .totalPrice(savedMouse.getPricePerProduct().multiply(new BigDecimal("2")))
-                        .description("Wireless mouse request for onboarding")
-                        .status(ProductStatus.ACTIVE)
-                        .createdDate(LocalDateTime.now().minusDays(2))
-                        .updatedDate(LocalDateTime.now().minusDays(1))
-                        .build();
-                ProcurementRequest savedActive = procurementRequestRepository.save(activeReq);
-
-                requestTrackingRepository.save(RequestTracking.builder()
-                        .procurementRequest(savedActive)
-                        .product(savedMouse)
-                        .actionBy(admin)
-                        .status(ProductStatus.PENDING_FOR_APPROVAL)
-                        .remarks("Procurement request submitted")
-                        .actionTimestamp(LocalDateTime.now().minusDays(2))
-                        .build());
-                requestTrackingRepository.save(RequestTracking.builder()
-                        .procurementRequest(savedActive)
-                        .product(savedMouse)
-                        .actionBy(admin)
-                        .status(ProductStatus.ACTIVE)
-                        .remarks("Request approved by Admin (Deducted 2 units from inventory stock)")
-                        .actionTimestamp(LocalDateTime.now().minusDays(1))
-                        .build());
             }
         }
 
         if (supplierRepository.count() == 0) {
-            Department procurementDept = departmentRepository.findByDepartmentName("Procurement").orElse(null);
-            Product savedMouse = productRepository
-                    .findFirstByNameIgnoreCaseAndStatus("Wireless Mouse", ProductStatus.ACTIVE).orElse(null);
-            Product savedChair = productRepository
-                    .findFirstByNameIgnoreCaseAndStatus("Ergonomic Office Chair", ProductStatus.ACTIVE).orElse(null);
+            Product mouse = productRepository.findFirstByNameIgnoreCaseAndStatus("Wireless Mouse", ProductStatus.ACTIVE).orElse(null);
+            Product monitor = productRepository.findFirstByNameIgnoreCaseAndStatus("4K Monitor 27-inch", ProductStatus.ACTIVE).orElse(null);
+            Product keyboard = productRepository.findFirstByNameIgnoreCaseAndStatus("Mechanical Keyboard", ProductStatus.ACTIVE).orElse(null);
+            Product chair = productRepository.findFirstByNameIgnoreCaseAndStatus("Ergonomic Office Chair", ProductStatus.ACTIVE).orElse(null);
+            Product desk = productRepository.findFirstByNameIgnoreCaseAndStatus("Standing Desk", ProductStatus.ACTIVE).orElse(null);
+            Product paper = productRepository.findFirstByNameIgnoreCaseAndStatus("A4 Printing Paper Bundle", ProductStatus.ACTIVE).orElse(null);
+            Product webcam = productRepository.findFirstByNameIgnoreCaseAndStatus("HD 1080p Webcam", ProductStatus.ACTIVE).orElse(null);
+            Product hub = productRepository.findFirstByNameIgnoreCaseAndStatus("USB-C Multiport Hub", ProductStatus.ACTIVE).orElse(null);
 
-            User supplierUser1 = userRepository.findByEmail("sales@logitech.in")
-                    .orElseGet(() -> userRepository.save(User.builder()
-                            .name("Logitech India Pvt Ltd")
-                            .email("sales@logitech.in")
-                            .password(passwordEncoder.encode("Supplier@123"))
-                            .phoneNumber("1800-123-4567")
-                            .designation("Supplier Account")
-                            .role(Role.SUPPLIER)
-                            .status(UserStatus.ACTIVE)
-                            .department(procurementDept)
-                            .build()));
+            // Supplier 1: TechSource Electronics
+            User sup1User = userRepository.findByEmail("sujeethvarma27@gmail.com").orElseGet(() -> userRepository.save(User.builder()
+                    .name("TechSource Electronics Pvt Ltd")
+                    .email("sujeethvarma27@gmail.com")
+                    .password(passwordEncoder.encode("Supplier@123"))
+                    .phoneNumber("1800-111-2222")
+                    .designation("Authorized Vendor Account")
+                    .role(Role.SUPPLIER)
+                    .status(UserStatus.ACTIVE)
+                    .department(procurementDept)
+                    .build()));
 
-            User supplierUser2 = userRepository.findByEmail("contact@steelcase.in")
-                    .orElseGet(() -> userRepository.save(User.builder()
-                            .name("Steelcase Furniture India")
-                            .email("contact@steelcase.in")
-                            .password(passwordEncoder.encode("Supplier@123"))
-                            .phoneNumber("1800-987-6543")
-                            .designation("Supplier Account")
-                            .role(Role.SUPPLIER)
-                            .status(UserStatus.ACTIVE)
-                            .department(procurementDept)
-                            .build()));
-
-            // Seed Dummy Suppliers for Active Products
             Supplier supplier1 = Supplier.builder()
-                    .product(savedMouse)
-                    .user(supplierUser1)
-                    .name("Logitech India Pvt Ltd")
-                    .phone("1800-123-4567")
-                    .address("Bengaluru, Karnataka, India")
-                    .email("sales@logitech.in")
-                    .gstNumber("29AAAAA0000A1Z5")
+                    .products(Arrays.asList(mouse, monitor, keyboard))
+                    .user(sup1User)
+                    .name("TechSource Electronics Pvt Ltd")
+                    .phone("1800-111-2222")
+                    .address("Bengaluru Tech Park, Karnataka, India")
+                    .email("sujeethvarma27@gmail.com")
+                    .accountNumber("ACC-1001-TECH")
+                    .bankName("HDFC Bank")
+                    .gstNumber("29TECHSRC1001Z1")
                     .status("PREFERRED_VENDOR")
-                    .rating(4.8)
-                    .feedback("High quality products and fast delivery")
+                    .rating(4.9)
+                    .feedback("Leading hardware supplier with fast dispatch")
                     .build();
             supplierRepository.save(supplier1);
 
+            // Supplier 2: ErgoComfort Furniture
+            User sup2User = userRepository.findByEmail("contact@ergocomfort.in").orElseGet(() -> userRepository.save(User.builder()
+                    .name("ErgoComfort Furniture Ltd")
+                    .email("contact@ergocomfort.in")
+                    .password(passwordEncoder.encode("Supplier@123"))
+                    .phoneNumber("1800-333-4444")
+                    .designation("Furniture Vendor Account")
+                    .role(Role.SUPPLIER)
+                    .status(UserStatus.ACTIVE)
+                    .department(procurementDept)
+                    .build()));
+
             Supplier supplier2 = Supplier.builder()
-                    .product(savedChair)
-                    .user(supplierUser2)
-                    .name("Steelcase Furniture India")
-                    .phone("1800-987-6543")
-                    .address("Mumbai, Maharashtra, India")
-                    .email("contact@steelcase.in")
-                    .gstNumber("27BBBBB1111B2Z8")
+                    .products(Arrays.asList(chair, desk))
+                    .user(sup2User)
+                    .name("ErgoComfort Furniture Ltd")
+                    .phone("1800-333-4444")
+                    .address("Mumbai Industrial Area, Maharashtra, India")
+                    .email("contact@ergocomfort.in")
+                    .accountNumber("ACC-2002-ERGO")
+                    .bankName("ICICI Bank")
+                    .gstNumber("27ERGOCMF2002Z2")
                     .status("VERIFIED")
-                    .rating(4.6)
-                    .feedback("Durable ergonomic office furniture provider")
+                    .rating(4.7)
+                    .feedback("High quality commercial ergonomic furniture")
                     .build();
             supplierRepository.save(supplier2);
+
+            // Supplier 3: OfficeDepot Stationeries
+            User sup3User = userRepository.findByEmail("support@officedepot.in").orElseGet(() -> userRepository.save(User.builder()
+                    .name("OfficeDepot Stationeries")
+                    .email("support@officedepot.in")
+                    .password(passwordEncoder.encode("Supplier@123"))
+                    .phoneNumber("1800-555-6666")
+                    .designation("Office Supplies Vendor Account")
+                    .role(Role.SUPPLIER)
+                    .status(UserStatus.ACTIVE)
+                    .department(procurementDept)
+                    .build()));
+
+            Supplier supplier3 = Supplier.builder()
+                    .products(Arrays.asList(paper))
+                    .user(sup3User)
+                    .name("OfficeDepot Stationeries")
+                    .phone("1800-555-6666")
+                    .address("New Delhi Commercial Hub, India")
+                    .email("support@officedepot.in")
+                    .accountNumber("ACC-3003-OFF")
+                    .bankName("State Bank of India")
+                    .gstNumber("07OFFDPT3003Z3")
+                    .status("VERIFIED")
+                    .rating(4.6)
+                    .feedback("Bulk stationery and office paper supplier")
+                    .build();
+            supplierRepository.save(supplier3);
+
+            // Supplier 4: CloudTech Peripherals
+            User sup4User = userRepository.findByEmail("info@cloudtech.in").orElseGet(() -> userRepository.save(User.builder()
+                    .name("CloudTech Peripherals Ltd")
+                    .email("info@cloudtech.in")
+                    .password(passwordEncoder.encode("Supplier@123"))
+                    .phoneNumber("1800-777-8888")
+                    .designation("Peripherals Vendor Account")
+                    .role(Role.SUPPLIER)
+                    .status(UserStatus.ACTIVE)
+                    .department(procurementDept)
+                    .build()));
+
+            Supplier supplier4 = Supplier.builder()
+                    .products(Arrays.asList(webcam, hub))
+                    .user(sup4User)
+                    .name("CloudTech Peripherals Ltd")
+                    .phone("1800-777-8888")
+                    .address("Hyderabad IT Hub, Telangana, India")
+                    .email("info@cloudtech.in")
+                    .accountNumber("ACC-4004-CLD")
+                    .bankName("Axis Bank")
+                    .gstNumber("36CLDTECH4004Z4")
+                    .status("PREFERRED_VENDOR")
+                    .rating(4.8)
+                    .feedback("High quality AV accessories and connectivity hubs")
+                    .build();
+            supplierRepository.save(supplier4);
         }
     }
 }

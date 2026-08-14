@@ -158,7 +158,8 @@ stateDiagram-v2
 | `GET` | `/api/users` | ADMIN | List all registered users |
 | `GET` | `/api/users/{id}` | ADMIN / Self | Get user profile by ID |
 | `GET` | `/api/request/pending` | ADMIN | List procurement requests pending approval (`ProcurementRequestResponseDto` list containing **`requestId`**) |
-| `POST` | `/api/request/{requestId}/status` | ADMIN | Consolidate request status update (approves/rejects based on `status`: `"approve"` or `"reject"`) |
+| `GET` | `/api/request/status?requestId={id}` | ADMIN / Authenticated | Fetch status and details of a procurement request by `requestId` query parameter |
+| `POST` | `/api/request/status` | ADMIN | Approve or reject request based on `requestId` & `status` (`"approve"` / `"reject"`) in request body |
 | `DELETE` | `/api/request/{requestId}` | ADMIN | Delete order request record by **`requestId`** |
 
 ---

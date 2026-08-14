@@ -2,6 +2,8 @@ package in.sujeeth.infosysinternproject.dto;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,10 +15,13 @@ public class SupplierDto {
     private Long userId;
     private Long productId;
     private String productName;
+    private List<ProductDto> products;
     private String name;
     private String phone;
     private String address;
     private String email;
+    private String accountNumber;
+    private String bankName;
     private String gstNumber;
     private String status;
     private Double rating;

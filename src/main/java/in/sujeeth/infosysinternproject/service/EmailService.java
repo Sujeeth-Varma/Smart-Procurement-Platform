@@ -35,6 +35,15 @@ public class EmailService {
     @Value("classpath:templates/email/request_approved.html")
     private Resource requestApprovedTemplateResource;
 
+    @Value("classpath:templates/email/request_rejected.html")
+    private Resource requestRejectedTemplateResource;
+
+    @Value("classpath:templates/email/payment_completed_supplier.html")
+    private Resource paymentCompletedSupplierTemplateResource;
+
+    @Value("classpath:templates/email/order_shipped.html")
+    private Resource orderShippedUserTemplateResource;
+
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy - hh:mm a");
 
     /**
@@ -83,6 +92,68 @@ public class EmailService {
             sendHtmlEmail(recipient, subject, htmlBody);
         } catch (Exception e) {
             log.error("Failed to send request approval HTML email for request ID {}: {}", request.getRequestId(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Send HTML email to the requesting user after admin rejection.
+     */
+    public void sendRequestRejectedNotification(ProcurementRequest request) {
+        try {
+            if (request.getUser() == null || request.getUser().getEmail() == null || request.getUser().getEmail().trim().isEmpty()) {
+                log.warn("Cannot send request rejection email: Requesting user email is missing for request ID {}", request.getRequestId());
+                return;
+            }
+
+            String recipient = request.getUser().getEmail().trim();
+            String subject = "Procurement Request Rejected - Request #" + request.getRequestId();
+            String htmlBody = buildRejectedRequestHtmlBody(request);
+
+            sendHtmlEmail(recipient, subject, htmlBody);
+        } catch (Exception e) {
+            log.error("Failed to send request rejection HTML email for request ID {}: {}", request.getRequestId(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Send HTML email notification to Supplier when payment is completed by Admin.
+     */
+    public void sendPaymentCompletedSupplierNotification(ProcurementRequest request, in.sujeeth.infosysinternproject.entity.Payment payment) {
+        try {
+            if (payment.getSupplier() == null || payment.getSupplier().getEmail() == null || payment.getSupplier().getEmail().trim().isEmpty()) {
+                log.warn("Cannot send supplier payment email: Supplier email missing for payment ID {}", payment.getPaymentId());
+                return;
+            }
+
+            String recipient = payment.getSupplier().getEmail().trim();
+            String subject = "Payment Received for Procurement Request #" + request.getRequestId() + " - Ready for Fulfillment";
+            String htmlBody = buildPaymentCompletedSupplierHtmlBody(request, payment);
+
+            sendHtmlEmail(recipient, subject, htmlBody);
+            log.info("Payment notification email sent to supplier '{}' for request ID {}", recipient, request.getRequestId());
+        } catch (Exception e) {
+            log.error("Failed to send supplier payment email for request ID {}: {}", request.getRequestId(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Send HTML email notification to requesting user when supplier ships order.
+     */
+    public void sendOrderShippedUserNotification(ProcurementRequest request) {
+        try {
+            if (request.getUser() == null || request.getUser().getEmail() == null || request.getUser().getEmail().trim().isEmpty()) {
+                log.warn("Cannot send order shipped email: User email missing for request ID {}", request.getRequestId());
+                return;
+            }
+
+            String recipient = request.getUser().getEmail().trim();
+            String subject = "Your Order Has Been Shipped! - Procurement Request #" + request.getRequestId();
+            String htmlBody = buildOrderShippedUserHtmlBody(request);
+
+            sendHtmlEmail(recipient, subject, htmlBody);
+            log.info("Order shipped email sent to user '{}' for request ID {}", recipient, request.getRequestId());
+        } catch (Exception e) {
+            log.error("Failed to send order shipped email for request ID {}: {}", request.getRequestId(), e.getMessage(), e);
         }
     }
 
@@ -144,6 +215,61 @@ public class EmailService {
                 .replace("{{QUANTITY}}", quantity)
                 .replace("{{TOTAL_PRICE}}", totalPrice)
                 .replace("{{APPROVAL_DATE}}", formattedDate);
+    }
+
+    private String buildRejectedRequestHtmlBody(ProcurementRequest req) {
+        String template = loadTemplate(requestRejectedTemplateResource);
+        String userName = req.getUser() != null ? req.getUser().getName() : "User";
+        String productName = req.getProduct() != null ? req.getProduct().getName() : "N/A";
+        String formattedDate = req.getUpdatedDate() != null ? req.getUpdatedDate().format(DATE_FORMATTER) : "N/A";
+        String totalPrice = req.getTotalPrice() != null ? "₹" + req.getTotalPrice().toString() : "N/A";
+        String quantity = req.getRequestedQuantity() != null ? req.getRequestedQuantity().toString() : "1";
+
+        return template
+                .replace("{{USER_NAME}}", userName)
+                .replace("{{REQUEST_ID}}", req.getRequestId() != null ? req.getRequestId().toString() : "")
+                .replace("{{PRODUCT_NAME}}", productName)
+                .replace("{{QUANTITY}}", quantity)
+                .replace("{{TOTAL_PRICE}}", totalPrice)
+                .replace("{{REJECTION_DATE}}", formattedDate);
+    }
+
+    private String buildPaymentCompletedSupplierHtmlBody(ProcurementRequest req, in.sujeeth.infosysinternproject.entity.Payment payment) {
+        String template = loadTemplate(paymentCompletedSupplierTemplateResource);
+        String supplierName = payment.getSupplier() != null ? payment.getSupplier().getName() : "Supplier";
+        String productName = req.getProduct() != null ? req.getProduct().getName() : "N/A";
+        String quantity = req.getRequestedQuantity() != null ? req.getRequestedQuantity().toString() : "1";
+        String amountPaid = payment.getAmount() != null ? "₹" + payment.getAmount().toString() : "N/A";
+        String accountNumber = payment.getAccountNumber() != null ? payment.getAccountNumber() : "N/A";
+        String userName = req.getUser() != null ? req.getUser().getName() : "N/A";
+        String userEmail = req.getUser() != null ? req.getUser().getEmail() : "N/A";
+        String formattedDate = payment.getTransactionDate() != null ? payment.getTransactionDate().format(DATE_FORMATTER) : "N/A";
+
+        return template
+                .replace("{{SUPPLIER_NAME}}", supplierName)
+                .replace("{{REQUEST_ID}}", req.getRequestId() != null ? req.getRequestId().toString() : "")
+                .replace("{{PRODUCT_NAME}}", productName)
+                .replace("{{QUANTITY}}", quantity)
+                .replace("{{AMOUNT_PAID}}", amountPaid)
+                .replace("{{ACCOUNT_NUMBER}}", accountNumber)
+                .replace("{{USER_NAME}}", userName)
+                .replace("{{USER_EMAIL}}", userEmail)
+                .replace("{{PAYMENT_DATE}}", formattedDate);
+    }
+
+    private String buildOrderShippedUserHtmlBody(ProcurementRequest req) {
+        String template = loadTemplate(orderShippedUserTemplateResource);
+        String userName = req.getUser() != null ? req.getUser().getName() : "User";
+        String productName = req.getProduct() != null ? req.getProduct().getName() : "N/A";
+        String quantity = req.getRequestedQuantity() != null ? req.getRequestedQuantity().toString() : "1";
+        String formattedDate = req.getUpdatedDate() != null ? req.getUpdatedDate().format(DATE_FORMATTER) : "N/A";
+
+        return template
+                .replace("{{USER_NAME}}", userName)
+                .replace("{{REQUEST_ID}}", req.getRequestId() != null ? req.getRequestId().toString() : "")
+                .replace("{{PRODUCT_NAME}}", productName)
+                .replace("{{QUANTITY}}", quantity)
+                .replace("{{SHIPPED_DATE}}", formattedDate);
     }
 
     private String loadTemplate(Resource resource) {

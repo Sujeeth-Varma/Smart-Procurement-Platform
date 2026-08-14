@@ -1,6 +1,7 @@
 package in.sujeeth.infosysinternproject.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import in.sujeeth.infosysinternproject.enums.RequestAction;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,8 +13,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RequestStatusUpdateDto {
 
+    @NotNull(message = "Request ID is required")
     private Long requestId;
 
-    @NotBlank(message = "Status is required (approve/reject)")
-    private String status;
+    @NotNull(message = "Status action is required (APPROVE or REJECT)")
+    private RequestAction status;
 }

@@ -34,11 +34,6 @@ public class Product {
     @Column(name = "price_per_product", nullable = false, precision = 10, scale = 2)
     private BigDecimal pricePerProduct;
 
-    @NotNull(message = "Number of quantities is required")
-    @Min(value = 1, message = "Quantities must be at least 1")
-    @Column(name = "number_of_quantities", nullable = false)
-    private Integer numberOfQuantities;
-
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
     private Category category;

@@ -5,6 +5,9 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "suppliers")
 @Getter
@@ -19,14 +22,18 @@ public class Supplier {
     @Column(name = "supplier_id")
     private Long supplierId;
 
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "product_id")
-    private Product product;
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "supplier_products",
+            joinColumns = @JoinColumn(name = "supplier_id"),
+            inverseJoinColumns = @JoinColumn(name = "product_id")
+    )
+    @Builder.Default
+    private List<Product> products = new ArrayList<>();
 
     @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private User user;
-
 
     @NotBlank(message = "Supplier name is required")
     @Column(name = "name", nullable = false)
@@ -41,6 +48,12 @@ public class Supplier {
     @Email(message = "Invalid supplier email format")
     @Column(name = "email")
     private String email;
+
+    @Column(name = "account_number")
+    private String accountNumber;
+
+    @Column(name = "bank_name")
+    private String bankName;
 
     @Column(name = "gst_number")
     private String gstNumber;

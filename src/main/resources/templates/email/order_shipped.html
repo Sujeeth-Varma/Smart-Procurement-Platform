@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Order Shipped</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; -webkit-font-smoothing: antialiased;">
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="table-layout: fixed;">
+    <tr>
+      <td align="center" style="padding: 40px 15px;">
+        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%); padding: 36px 30px; text-align: center;">
+              <div style="display: inline-block; background-color: rgba(255, 255, 255, 0.15); padding: 8px 16px; border-radius: 20px; color: #bfdbfe; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
+                Enterprise Procurement System
+              </div>
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.5px;">Order Shipped!</h1>
+              <p style="color: #dbeafe; margin: 8px 0 0 0; font-size: 14px;">Great news! The supplier has dispatched your requested product.</p>
+            </td>
+          </tr>
+
+          <!-- Status Banner -->
+          <tr>
+            <td style="padding: 24px 30px 12px 30px;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 14px 18px;">
+                <tr>
+                  <td style="color: #1e40af; font-size: 14px; font-weight: 600;">
+                    Status: 
+                    <span style="background-color: #dbeafe; color: #1e40af; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; border: 1px solid #93c5fd; margin-left: 6px; display: inline-block;">
+                      SHIPPED / EN ROUTE
+                    </span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Details Table -->
+          <tr>
+            <td style="padding: 12px 30px 24px 30px;">
+              <p style="color: #334155; font-size: 15px; margin: 0 0 16px 0;">Hello <strong>{{USER_NAME}}</strong>,</p>
+              <p style="color: #475569; font-size: 14px; margin: 0 0 20px 0; line-height: 1.5;">The supplier has dispatched your requested item. Details of your order are below:</p>
+              
+              <h3 style="color: #1e293b; font-size: 16px; margin: 0 0 16px 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px;">Shipment Details (#{{REQUEST_ID}})</h3>
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="font-size: 14px; color: #334155; border-collapse: collapse;">
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500; width: 40%;">Product Name</td>
+                  <td style="padding: 10px 0; font-weight: 600; color: #0f172a; text-align: right;">{{PRODUCT_NAME}}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Quantity</td>
+                  <td style="padding: 10px 0; font-weight: 600; color: #0f172a; text-align: right;">{{QUANTITY}} units</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Status</td>
+                  <td style="padding: 10px 0; font-weight: 600; color: #2563eb; text-align: right;">SHIPPED</td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 0; color: #64748b; font-weight: 500;">Dispatch Timestamp</td>
+                  <td style="padding: 10px 0; font-weight: 500; color: #64748b; text-align: right;">{{SHIPPED_DATE}}</td>
+                </tr>
+              </table>
+              <p style="color: #475569; font-size: 14px; margin: 20px 0 0 0; line-height: 1.5;">Your item is en route and will be delivered to your department shortly.</p>
+            </td>
+          </tr>
+          
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

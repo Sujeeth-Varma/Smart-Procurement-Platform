@@ -4,9 +4,12 @@ import in.sujeeth.infosysinternproject.dto.ApiResponse;
 import in.sujeeth.infosysinternproject.dto.ProcurementRequestResponseDto;
 import in.sujeeth.infosysinternproject.dto.RaiseProductRequestDto;
 import in.sujeeth.infosysinternproject.dto.RequestTrackingDto;
+import in.sujeeth.infosysinternproject.dto.RequestStatusUpdateDto;
+import in.sujeeth.infosysinternproject.exception.BadRequestException;
 import in.sujeeth.infosysinternproject.service.ProductService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -14,9 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-import in.sujeeth.infosysinternproject.dto.RequestStatusUpdateDto;
-import in.sujeeth.infosysinternproject.exception.BadRequestException;
-
+@Slf4j
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
@@ -30,45 +31,49 @@ public class RequestController {
             Authentication authentication
     ) {
         String email = authentication.getName();
+        log.info("REST request to raise procurement request by user: {}", email);
         ProcurementRequestResponseDto response = productService.raiseProductRequest(dto, email);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @GetMapping("/request/pending")
     public ResponseEntity<List<ProcurementRequestResponseDto>> getPendingRequests() {
+        log.info("REST request to get all pending procurement requests");
         return ResponseEntity.ok(productService.getPendingProducts());
     }
 
-    @PostMapping({"/request/{id}/status", "/request/{id}/action"})
-    public ResponseEntity<ProcurementRequestResponseDto> updateRequestStatusWithId(
-            @PathVariable("id") Long id,
-            @Valid @RequestBody RequestStatusUpdateDto dto,
-            Authentication authentication
+    @GetMapping("/request/status")
+    public ResponseEntity<ProcurementRequestResponseDto> getRequestStatus(
+            @RequestParam("requestId") Long requestId
     ) {
-        String adminEmail = authentication.getName();
-        return ResponseEntity.ok(productService.updateRequestStatus(id, dto.getStatus(), adminEmail));
+        log.info("REST request to get status for request ID: {}", requestId);
+        return ResponseEntity.ok(productService.getRequestById(requestId));
     }
 
     @PostMapping("/request/status")
-    public ResponseEntity<ProcurementRequestResponseDto> updateRequestStatusInBody(
+    public ResponseEntity<ProcurementRequestResponseDto> updateRequestStatus(
             @Valid @RequestBody RequestStatusUpdateDto dto,
             Authentication authentication
     ) {
-        Long targetId = dto.getRequestId();
-        if (targetId == null) {
-            throw new BadRequestException("Request ID must be provided in URL path or request body");
+        if (dto.getRequestId() == null) {
+            log.warn("REST update request status failed: Request ID is missing");
+            throw new BadRequestException("Request ID must be provided in request body");
         }
         String adminEmail = authentication.getName();
-        return ResponseEntity.ok(productService.updateRequestStatus(targetId, dto.getStatus(), adminEmail));
+        log.info("REST request to update request status: requestId={}, status={}, adminEmail={}",
+                dto.getRequestId(), dto.getStatus(), adminEmail);
+        return ResponseEntity.ok(productService.updateRequestStatus(dto.getRequestId(), dto.getStatus(), adminEmail));
     }
 
     @DeleteMapping("/request/{id}")
     public ResponseEntity<ApiResponse> deleteRequest(@PathVariable("id") Long id) {
+        log.info("REST request to delete request/product with ID: {}", id);
         return ResponseEntity.ok(productService.deleteProduct(id));
     }
 
     @GetMapping("/request/{id}/tracking")
     public ResponseEntity<List<RequestTrackingDto>> getRequestTracking(@PathVariable("id") Long id) {
+        log.info("REST request to get tracking history for request ID: {}", id);
         return ResponseEntity.ok(productService.getRequestTrackingHistory(id));
     }
 }

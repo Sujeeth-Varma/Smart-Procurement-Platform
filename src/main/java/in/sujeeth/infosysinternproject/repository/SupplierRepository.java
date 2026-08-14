@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface SupplierRepository extends JpaRepository<Supplier, Long> {
-    List<Supplier> findByProductProductId(Long productId);
+    List<Supplier> findByProductsProductId(Long productId);
     Optional<Supplier> findByEmail(String email);
     Optional<Supplier> findByUserUserId(Long userId);
 }

@@ -7,10 +7,12 @@ import in.sujeeth.infosysinternproject.dto.UserDto;
 import in.sujeeth.infosysinternproject.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/public")
 @RequiredArgsConstructor
@@ -20,18 +22,21 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<UserDto> register(@Valid @RequestBody SignupRequest request) {
+        log.info("REST request to register new user: {}", request.getEmail());
         UserDto createdUser = authService.register(request);
         return new ResponseEntity<>(createdUser, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        log.info("REST request to user login for email: {}", request.getEmail());
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/admin/login")
     public ResponseEntity<LoginResponse> adminLogin(@Valid @RequestBody LoginRequest request) {
+        log.info("REST request to admin login for email: {}", request.getEmail());
         LoginResponse response = authService.adminLogin(request);
         return ResponseEntity.ok(response);
     }

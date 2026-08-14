@@ -8,11 +8,13 @@ import in.sujeeth.infosysinternproject.entity.RequestTracking;
 import in.sujeeth.infosysinternproject.entity.Supplier;
 import in.sujeeth.infosysinternproject.entity.User;
 import in.sujeeth.infosysinternproject.enums.ProductStatus;
+import in.sujeeth.infosysinternproject.enums.RequestAction;
 import in.sujeeth.infosysinternproject.enums.Role;
 import in.sujeeth.infosysinternproject.exception.BadRequestException;
 import in.sujeeth.infosysinternproject.exception.ResourceNotFoundException;
 import in.sujeeth.infosysinternproject.repository.*;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductService {
@@ -81,6 +84,12 @@ public class ProductService {
         return mapProcurementRequestToDto(saved, "Procurement request raised successfully");
     }
 
+    public ProcurementRequestResponseDto getRequestById(Long requestId) {
+        ProcurementRequest req = procurementRequestRepository.findById(requestId)
+                .orElseThrow(() -> new ResourceNotFoundException("Procurement request not found with ID: " + requestId));
+        return mapProcurementRequestToDto(req, "Procurement request status fetched successfully");
+    }
+
     public List<ProcurementRequestResponseDto> getPendingProducts() {
         return procurementRequestRepository.findByStatus(ProductStatus.PENDING_FOR_APPROVAL)
                 .stream()
@@ -103,68 +112,62 @@ public class ProductService {
     }
 
     @Transactional
-    public ProcurementRequestResponseDto updateRequestStatus(Long requestId, String statusStr, String adminEmail) {
-        if (statusStr == null || statusStr.trim().isEmpty()) {
-            throw new BadRequestException("Status is required (approve/reject)");
+    public ProcurementRequestResponseDto updateRequestStatus(Long requestId, RequestAction action, String adminEmail) {
+        if (action == null) {
+            throw new BadRequestException("Status action is required (APPROVE/REJECT)");
         }
-        String normalized = statusStr.trim().toLowerCase();
-        if ("approve".equals(normalized) || "approved".equals(normalized) || "active".equals(normalized)) {
+        if (action == RequestAction.APPROVE) {
             return approveProduct(requestId, adminEmail);
-        } else if ("reject".equals(normalized) || "rejected".equals(normalized) || "closed".equals(normalized)) {
+        } else if (action == RequestAction.REJECT) {
             return rejectProduct(requestId, adminEmail);
         } else {
-            throw new BadRequestException("Invalid status '" + statusStr + "'. Allowed values are 'approve' or 'reject'");
+            throw new BadRequestException("Invalid status action: " + action);
         }
     }
 
     @Transactional
     public ProcurementRequestResponseDto approveProduct(Long requestId, String adminEmail) {
+        log.info("Processing procurement request approval: requestId={}, adminEmail={}", requestId, adminEmail);
         ProcurementRequest req = procurementRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Procurement request not found with ID: " + requestId));
 
-        if (req.getStatus() == ProductStatus.ACTIVE) {
-            throw new BadRequestException("Product request is already approved and cannot be approved again");
+        if (req.getStatus() == ProductStatus.APPROVED || req.getStatus() == ProductStatus.PAYMENT_COMPLETED || req.getStatus() == ProductStatus.SHIPPED || req.getStatus() == ProductStatus.ACTIVE) {
+            log.warn("Approval failed: Procurement request ID {} is already approved (status={})", requestId, req.getStatus());
+            throw new BadRequestException("Product request is already approved");
         }
         if (req.getStatus() == ProductStatus.CLOSED) {
+            log.warn("Approval failed: Procurement request ID {} is already CLOSED", requestId);
             throw new BadRequestException("Cannot approve a closed/rejected product request");
         }
 
-        Product inventoryItem = req.getProduct();
-        int currentStock = inventoryItem.getNumberOfQuantities() != null ? inventoryItem.getNumberOfQuantities() : 0;
-        int requestedQty = req.getRequestedQuantity() != null ? req.getRequestedQuantity() : 1;
-
-        if (currentStock < requestedQty) {
-            throw new BadRequestException("Insufficient inventory stock for product '" + inventoryItem.getName()
-                    + "'. Required: " + requestedQty + " units, Available in inventory: " + currentStock
-                    + " units. Please request supplier restocking before approval.");
-        }
-
-        // Deduct stock from inventory table
-        inventoryItem.setNumberOfQuantities(currentStock - requestedQty);
-        productRepository.save(inventoryItem);
-
         User adminUser = userRepository.findByEmail(adminEmail).orElse(null);
-        req.setStatus(ProductStatus.ACTIVE);
+        req.setStatus(ProductStatus.APPROVED);
         ProcurementRequest updated = procurementRequestRepository.save(req);
 
-        createTrackingRecordForRequest(updated, adminUser, ProductStatus.ACTIVE,
-                "Request approved by Admin (Deducted " + requestedQty + " units from inventory stock)");
+        createTrackingRecordForRequest(updated, adminUser, ProductStatus.APPROVED,
+                "Request approved by Admin. Pending payment processing.");
+
+        log.info("Procurement request ID {} successfully approved by admin '{}'. Status updated to APPROVED (Pending Payment).",
+                requestId, adminEmail);
 
         // Send Email Notification to User for Request Approval
         emailService.sendRequestApprovedNotification(updated);
 
-        return mapProcurementRequestToDto(updated, "Request approved successfully");
+        return mapProcurementRequestToDto(updated, "Request approved successfully. Pending payment to supplier.");
     }
 
     @Transactional
     public ProcurementRequestResponseDto rejectProduct(Long requestId, String adminEmail) {
+        log.info("Processing procurement request rejection: requestId={}, adminEmail={}", requestId, adminEmail);
         ProcurementRequest req = procurementRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException("Procurement request not found with ID: " + requestId));
 
         if (req.getStatus() == ProductStatus.CLOSED) {
+            log.warn("Rejection failed: Procurement request ID {} is already CLOSED", requestId);
             throw new BadRequestException("Product request is already closed/rejected and cannot be rejected again");
         }
         if (req.getStatus() == ProductStatus.ACTIVE) {
+            log.warn("Rejection failed: Procurement request ID {} is already ACTIVE", requestId);
             throw new BadRequestException("Cannot reject an already approved product request");
         }
 
@@ -173,11 +176,18 @@ public class ProductService {
         ProcurementRequest updated = procurementRequestRepository.save(req);
 
         createTrackingRecordForRequest(updated, adminUser, ProductStatus.CLOSED, "Request rejected by Admin");
+
+        log.info("Procurement request ID {} successfully rejected by admin '{}'", requestId, adminEmail);
+
+        // Send Email Notification to User for Request Rejection
+        emailService.sendRequestRejectedNotification(updated);
+
         return mapProcurementRequestToDto(updated, "Request rejected successfully");
     }
 
     @Transactional
     public ProductDto restockProductBySupplier(Long productId, RestockProductDto dto, String actionUserEmail) {
+        log.info("Processing supplier product restock: productId={}, userEmail={}", productId, actionUserEmail);
         if (actionUserEmail == null) {
             throw new BadRequestException("Authenticated user email is required");
         }
@@ -188,38 +198,42 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with ID: " + productId));
 
-        if (dto.getQuantityToAdd() == null || dto.getQuantityToAdd() < 1) {
-            throw new BadRequestException("Quantity to add must be at least 1");
+        if (product.getStatus() == ProductStatus.CLOSED) {
+            product.setStatus(ProductStatus.ACTIVE);
+            log.info("Product ID {} ('{}') status changed from CLOSED to ACTIVE by supplier restock", productId, product.getName());
         }
-
-        int previousCount = product.getNumberOfQuantities() != null ? product.getNumberOfQuantities() : 0;
-        int newCount = previousCount + dto.getQuantityToAdd();
-        product.setNumberOfQuantities(newCount);
 
         Product updated = productRepository.save(product);
 
         User actionUser = userRepository.findByEmail(actionUserEmail).orElse(null);
-        String remarkText = "Stock refilled by Supplier '" + supplier.getName() + "' (+ " + dto.getQuantityToAdd() + " units). New Inventory Stock: " + newCount;
+        String remarkText = "Product supply activated/replenished by Supplier '" + supplier.getName() + "'";
         if (dto.getRemarks() != null && !dto.getRemarks().trim().isEmpty()) {
             remarkText += ". Remarks: " + dto.getRemarks();
         }
 
         createTrackingRecord(updated, actionUser, updated.getStatus(), remarkText);
+        log.info("Product ID {} restocked/activated successfully by supplier {}", productId, supplier.getName());
 
-        return mapToActiveProductDto(updated, "Stock replenished successfully by supplier");
+        return mapToActiveProductDto(updated, "Product activated/replenished successfully by supplier");
     }
 
     @Transactional
     public ApiResponse deleteProduct(Long requestId) {
+        log.info("Processing delete request for ID {}", requestId);
         if (procurementRequestRepository.existsById(requestId)) {
             procurementRequestRepository.deleteById(requestId);
+            log.info("Procurement request ID {} deleted successfully", requestId);
             return new ApiResponse("Request deleted successfully", true);
         }
         Product product = productRepository.findById(requestId)
-                .orElseThrow(() -> new ResourceNotFoundException("Request not found with ID: " + requestId));
+                .orElseThrow(() -> new ResourceNotFoundException("Request or Product not found with ID: " + requestId));
 
-        productRepository.delete(product);
-        return new ApiResponse("Request deleted successfully", true);
+        // Soft-delete / deactivate product by updating status to CLOSED
+        product.setStatus(ProductStatus.CLOSED);
+        productRepository.save(product);
+        log.info("Product ID {} ('{}') status updated to CLOSED (deleted from active catalog)",
+                product.getProductId(), product.getName());
+        return new ApiResponse("Product deleted successfully", true);
     }
 
     public List<RequestTrackingDto> getRequestTrackingHistory(Long requestId) {
@@ -306,19 +320,12 @@ public class ProductService {
     public ProductDto mapToProductDto(Product product, String message) {
         if (product == null) return null;
 
-        BigDecimal total = BigDecimal.ZERO;
-        if (product.getPricePerProduct() != null && product.getNumberOfQuantities() != null) {
-            total = product.getPricePerProduct().multiply(BigDecimal.valueOf(product.getNumberOfQuantities()));
-        }
-
         String catName = product.getCategory() != null ? product.getCategory().getCategoryName() : null;
 
         return ProductDto.builder()
                 .productId(product.getProductId())
                 .name(product.getName())
                 .pricePerProduct(product.getPricePerProduct())
-                .numberOfQuantities(product.getNumberOfQuantities())
-                .totalPrice(total)
                 .categoryName(catName)
                 .description(product.getDescription())
                 .status(product.getStatus())
@@ -331,19 +338,12 @@ public class ProductService {
     public ProductDto mapToActiveProductDto(Product product, String message) {
         if (product == null) return null;
 
-        BigDecimal total = BigDecimal.ZERO;
-        if (product.getPricePerProduct() != null && product.getNumberOfQuantities() != null) {
-            total = product.getPricePerProduct().multiply(BigDecimal.valueOf(product.getNumberOfQuantities()));
-        }
-
         String catName = product.getCategory() != null ? product.getCategory().getCategoryName() : null;
 
         return ProductDto.builder()
                 .productId(product.getProductId())
                 .name(product.getName())
                 .pricePerProduct(product.getPricePerProduct())
-                .numberOfQuantities(product.getNumberOfQuantities())
-                .totalPrice(total)
                 .categoryName(catName)
                 .description(product.getDescription())
                 .status(product.getStatus())
