@@ -2,6 +2,7 @@ package in.sujeeth.infosysinternproject.service;
 
 import in.sujeeth.infosysinternproject.entity.ProcurementRequest;
 import in.sujeeth.infosysinternproject.entity.User;
+import in.sujeeth.infosysinternproject.enums.ProductStatus;
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,21 @@ public class EmailService {
 
     @Value("classpath:templates/email/order_shipped.html")
     private Resource orderShippedUserTemplateResource;
+
+    @Value("classpath:templates/email/order_received.html")
+    private Resource orderReceivedTemplateResource;
+
+    @Value("classpath:templates/email/order_packed.html")
+    private Resource orderPackedTemplateResource;
+
+    @Value("classpath:templates/email/order_dispatched.html")
+    private Resource orderDispatchedTemplateResource;
+
+    @Value("classpath:templates/email/out_for_delivery.html")
+    private Resource outForDeliveryTemplateResource;
+
+    @Value("classpath:templates/email/order_delivered.html")
+    private Resource orderDeliveredTemplateResource;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("MMM dd, yyyy - hh:mm a");
 
@@ -270,6 +286,79 @@ public class EmailService {
                 .replace("{{PRODUCT_NAME}}", productName)
                 .replace("{{QUANTITY}}", quantity)
                 .replace("{{SHIPPED_DATE}}", formattedDate);
+    }
+
+    /**
+     * Send HTML email notification to requesting User and all Admins when supplier updates delivery status.
+     */
+    public void sendOrderStatusUpdateNotification(ProcurementRequest request, ProductStatus status, String remarks, List<User> adminUsers) {
+        try {
+            Set<String> recipients = new HashSet<>();
+            if (request.getUser() != null && request.getUser().getEmail() != null && !request.getUser().getEmail().trim().isEmpty()) {
+                recipients.add(request.getUser().getEmail().trim());
+            }
+            if (adminUsers != null) {
+                for (User admin : adminUsers) {
+                    if (admin.getEmail() != null && !admin.getEmail().trim().isEmpty()) {
+                        recipients.add(admin.getEmail().trim());
+                    }
+                }
+            }
+
+            String subject = "Order Status Update: " + status.name() + " - Request #" + request.getRequestId();
+
+            for (String recipientEmail : recipients) {
+                String recipientName = "User/Admin";
+                if (request.getUser() != null && recipientEmail.equalsIgnoreCase(request.getUser().getEmail())) {
+                    recipientName = request.getUser().getName();
+                }
+                String htmlBody = buildOrderStatusUpdateHtmlBody(request, status, remarks, recipientName);
+                sendHtmlEmail(recipientEmail, subject, htmlBody);
+            }
+            log.info("Order status update notification emails sent to {} recipients for request ID {} (Status: {})",
+                    recipients.size(), request.getRequestId(), status);
+        } catch (Exception e) {
+            log.error("Failed to send order status update email for request ID {}: {}", request.getRequestId(), e.getMessage(), e);
+        }
+    }
+
+    private String buildOrderStatusUpdateHtmlBody(ProcurementRequest req, ProductStatus status, String remarks, String recipientName) {
+        Resource templateResource;
+        switch (status) {
+            case ORDER_RECEIVED:
+                templateResource = orderReceivedTemplateResource;
+                break;
+            case ORDER_PACKED:
+                templateResource = orderPackedTemplateResource;
+                break;
+            case ORDER_DISPATCHED:
+            case SHIPPED:
+                templateResource = orderDispatchedTemplateResource;
+                break;
+            case OUT_FOR_DELIVERY:
+                templateResource = outForDeliveryTemplateResource;
+                break;
+            case DELIVERED:
+                templateResource = orderDeliveredTemplateResource;
+                break;
+            default:
+                templateResource = orderDispatchedTemplateResource;
+                break;
+        }
+
+        String template = loadTemplate(templateResource);
+        String productName = req.getProduct() != null ? req.getProduct().getName() : "N/A";
+        String quantity = req.getRequestedQuantity() != null ? req.getRequestedQuantity().toString() : "1";
+        String formattedDate = req.getUpdatedDate() != null ? req.getUpdatedDate().format(DATE_FORMATTER) : "N/A";
+        String remarksText = (remarks != null && !remarks.trim().isEmpty()) ? remarks.trim() : "No additional remarks.";
+
+        return template
+                .replace("{{RECIPIENT_NAME}}", recipientName != null ? recipientName : "User")
+                .replace("{{REQUEST_ID}}", req.getRequestId() != null ? req.getRequestId().toString() : "")
+                .replace("{{PRODUCT_NAME}}", productName)
+                .replace("{{QUANTITY}}", quantity)
+                .replace("{{REMARKS}}", remarksText)
+                .replace("{{UPDATED_DATE}}", formattedDate);
     }
 
     private String loadTemplate(Resource resource) {

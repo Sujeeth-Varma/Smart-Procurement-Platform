@@ -51,7 +51,7 @@ public class ProcurementRequest {
 
     @NotNull(message = "Status is required")
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column(name = "status", nullable = false, length = 50)
     private ProductStatus status;
 
     @Column(name = "created_date", nullable = false)

@@ -5,7 +5,9 @@ import in.sujeeth.infosysinternproject.enums.ProductStatus;
 import in.sujeeth.infosysinternproject.enums.Role;
 import in.sujeeth.infosysinternproject.enums.UserStatus;
 import in.sujeeth.infosysinternproject.repository.*;
+import org.springframework.jdbc.core.JdbcTemplate;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -16,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
@@ -29,15 +32,28 @@ public class DataInitializer implements CommandLineRunner {
     private final SupplierRepository supplierRepository;
     private final RequestTrackingRepository requestTrackingRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     @Transactional
     public void run(String... args) throws Exception {
+        fixStatusColumnLengths();
         seedDepartments();
         seedCategories();
         User admin = seedSingleAdminUser();
         seedApprovalHierarchy();
         seedDemoProductsAndSuppliers(admin);
+    }
+
+    private void fixStatusColumnLengths() {
+        try {
+            jdbcTemplate.execute("ALTER TABLE procurement_requests MODIFY COLUMN status VARCHAR(50) NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE request_tracking MODIFY COLUMN status VARCHAR(50) NOT NULL");
+            jdbcTemplate.execute("ALTER TABLE products MODIFY COLUMN status VARCHAR(50) NOT NULL");
+            log.info("Successfully resized database 'status' columns to VARCHAR(50)");
+        } catch (Exception e) {
+            log.warn("Notice during column resize execution: {}", e.getMessage());
+        }
     }
 
     private void seedDepartments() {

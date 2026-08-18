@@ -673,13 +673,13 @@
 						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/supplier/orders/1/ship",
+							"raw": "{{baseUrl}}/api/suppliers/orders/1/ship",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
-								"supplier",
+								"suppliers",
 								"orders",
 								"1",
 								"ship"

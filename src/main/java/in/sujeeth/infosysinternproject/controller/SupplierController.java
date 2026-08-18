@@ -3,6 +3,7 @@ package in.sujeeth.infosysinternproject.controller;
 import in.sujeeth.infosysinternproject.dto.ProcurementRequestResponseDto;
 import in.sujeeth.infosysinternproject.dto.ProductDto;
 import in.sujeeth.infosysinternproject.dto.RestockProductDto;
+import in.sujeeth.infosysinternproject.dto.SupplierOrderStatusUpdateDto;
 import in.sujeeth.infosysinternproject.dto.SupplierDto;
 import in.sujeeth.infosysinternproject.service.ProductService;
 import in.sujeeth.infosysinternproject.service.SupplierService;
@@ -48,14 +49,16 @@ public class SupplierController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/supplier/orders/{requestId}/ship")
-    public ResponseEntity<ProcurementRequestResponseDto> shipOrder(
+    @PostMapping("/suppliers/orders/{requestId}/status")
+    public ResponseEntity<ProcurementRequestResponseDto> updateOrderStatus(
             @PathVariable("requestId") Long requestId,
+            @Valid @RequestBody SupplierOrderStatusUpdateDto dto,
             Authentication authentication
     ) {
         String supplierEmail = authentication != null ? authentication.getName() : null;
-        log.info("REST request by supplier '{}' to approve and ship order ID {}", supplierEmail, requestId);
-        ProcurementRequestResponseDto response = supplierService.shipOrder(requestId, supplierEmail);
+        log.info("REST request by supplier '{}' to update status of order ID {} to {}",
+                supplierEmail, requestId, dto != null ? dto.getStatus() : null);
+        ProcurementRequestResponseDto response = supplierService.updateOrderStatus(requestId, dto, supplierEmail);
         return ResponseEntity.ok(response);
     }
 }
