@@ -49,6 +49,13 @@ public class SupplierController {
         return ResponseEntity.ok(response);
     }
 
+    @GetMapping("/suppliers/orders")
+    public ResponseEntity<List<ProcurementRequestResponseDto>> getSupplierOrders(Authentication authentication) {
+        String supplierEmail = authentication != null ? authentication.getName() : null;
+        log.info("REST request to get assigned orders for supplier: {}", supplierEmail);
+        return ResponseEntity.ok(supplierService.getOrdersForSupplier(supplierEmail));
+    }
+
     @PostMapping("/suppliers/orders/{requestId}/status")
     public ResponseEntity<ProcurementRequestResponseDto> updateOrderStatus(
             @PathVariable("requestId") Long requestId,

@@ -78,9 +78,8 @@ export function FeaturesGrid() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                whileHover={{ y: -4 }}
-                className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm hover:shadow-md hover:border-primary/40 transition-all group flex flex-col justify-between"
+                transition={{ duration: 0.4, delay: i * 0.06 }}
+                className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-sm p-6 shadow-sm duration-300 ease-out hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/50 transition-all group flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">

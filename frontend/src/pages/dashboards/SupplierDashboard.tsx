@@ -1,64 +1,87 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router';
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { apiClient } from '@/api/client';
+import { procurementApi } from '@/api/procurement';
+import { supplierApi } from '@/api/supplier';
+import { RestockModal } from '@/components/modals/RestockModal';
+import type { Product, ProcurementRequest } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Truck,
+  CheckCircle2,
   PackageCheck,
   Send,
   Boxes,
   Building2,
   Loader2,
+  ArrowRight,
   Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function SupplierDashboard() {
   const { user } = useAuthStore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [orders, setOrders] = useState<ProcurementRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [shippingId, setShippingId] = useState<number | null>(null);
+  const [restockModalOpen, setRestockModalOpen] = useState(false);
 
-  const [orders, setOrders] = useState([
-    {
-      orderId: 1,
-      productName: 'Logitech Wireless Mouse M185',
-      quantity: 10,
-      clientDepartment: 'IT Enterprise Dev',
-      orderDate: 'Aug 25, 2026',
-      status: 'Awaiting Shipment',
-    },
-    {
-      orderId: 2,
-      productName: 'Ergonomic Desk Mat & Keyboards',
-      quantity: 5,
-      clientDepartment: 'HR Operations',
-      orderDate: 'Aug 24, 2026',
-      status: 'Awaiting Shipment',
-    },
-  ]);
-
-  const handleShipOrder = async (orderId: number) => {
-    setShippingId(orderId);
+  const loadData = async () => {
+    setIsLoading(true);
     try {
-      // Call endpoint if live
-      await apiClient(`/api/suppliers/orders/${orderId}/ship`, {
-        method: 'POST',
-      }).catch(() => null);
-
-      toast.success(`Order #${orderId} marked as shipped! Email alert sent to client.`);
-      setOrders((prev) => prev.filter((o) => o.orderId !== orderId));
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to dispatch order');
+      const [prodList, orderList] = await Promise.all([
+        procurementApi.getProducts().catch(() => []),
+        supplierApi.getSupplierOrders().catch(() => []),
+      ]);
+      setProducts(prodList || []);
+      setOrders(orderList || []);
+    } catch {
+      setProducts([]);
+      setOrders([]);
     } finally {
-      setShippingId(null);
+      setIsLoading(false);
     }
   };
 
-  const handleRestockDemo = () => {
-    toast.info('Restock Inventory flow initialized for Phase 2.');
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const getNextStage = (status: string) => {
+    const s = (status || '').toUpperCase();
+    if (s.includes('DELIVERED')) return null;
+    if (s.includes('OUT_FOR_DELIVERY')) {
+      return { nextStatus: 'DELIVERED' as const, label: 'Confirm Delivered' };
+    }
+    if (s.includes('DISPATCHED') || s.includes('SHIPPED')) {
+      return { nextStatus: 'OUT_FOR_DELIVERY' as const, label: 'Mark Out for Delivery' };
+    }
+    if (s.includes('ORDER_PACKED')) {
+      return { nextStatus: 'ORDER_DISPATCHED' as const, label: 'Dispatch Order' };
+    }
+    if (s.includes('ORDER_RECEIVED')) {
+      return { nextStatus: 'ORDER_PACKED' as const, label: 'Pack Order' };
+    }
+    return { nextStatus: 'ORDER_RECEIVED' as const, label: 'Acknowledge' };
+  };
+
+  const handleShipOrder = async (requestId: number, nextStatus: any = 'ORDER_DISPATCHED') => {
+    setShippingId(requestId);
+    try {
+      await supplierApi.updateOrderStatus(requestId, nextStatus, 'Supplier dispatch action from dashboard');
+      toast.success(`Order #${requestId} updated to ${nextStatus}!`);
+      setOrders((prev) =>
+        prev.map((o) => (o.requestId === requestId ? { ...o, status: nextStatus } : o))
+      );
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to update order status');
+    } finally {
+      setShippingId(null);
+    }
   };
 
   return (
@@ -77,26 +100,26 @@ export function SupplierDashboard() {
               </Badge>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-2">
-              <span>Vendor: <strong className="text-foreground">{user?.email || 'supplier@company.com'}</strong></span>
+              <span>Vendor Account: <strong className="text-foreground">{user?.email || 'supplier@company.com'}</strong></span>
               <span>•</span>
               <span className="flex items-center gap-1">
                 <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                Company: {user?.name || 'Authorized Partner'}
+                Company: {user?.name || 'Verified Supplier'}
               </span>
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <Button onClick={handleRestockDemo} className="gap-2 rounded-xl shadow-md shadow-primary/20">
+            <Button onClick={() => setRestockModalOpen(true)} className="gap-2 rounded-xl shadow-md shadow-primary/20">
               <Boxes className="h-4 w-4" />
-              Restock Catalog Stock
+              Restock Product Stock
             </Button>
           </div>
         </div>
 
-        {/* Stats Grid */}
+        {/* High-level KPIs */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-border/60 bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm">
+          <Card className="border-border/60 bg-card rounded-2xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Orders to Dispatch
@@ -104,121 +127,218 @@ export function SupplierDashboard() {
               <Truck className="h-4 w-4 text-amber-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-amber-500">{orders.length}</div>
-              <p className="text-[11px] text-muted-foreground mt-1">Pending shipping confirmation</p>
+              <div className="text-2xl font-bold text-amber-500">
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : `${orders.length} Ready`}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Pending shipping</p>
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm">
+          <Card className="border-border/60 bg-card rounded-2xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Completed Shipments
+                Catalog Items
               </CardTitle>
               <PackageCheck className="h-4 w-4 text-emerald-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-emerald-500">14 Orders</div>
-              <p className="text-[11px] text-muted-foreground mt-1">Delivered this quarter</p>
+              <div className="text-2xl font-bold text-emerald-500">
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : `${products.length} SKUs`}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-1">Supplied in catalog</p>
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm">
+          <Card className="border-border/60 bg-card rounded-2xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Supplier Quality Rating
+                Supplier Rating
               </CardTitle>
               <Sparkles className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">4.9 / 5.0</div>
-              <p className="text-[11px] text-muted-foreground mt-1">Top enterprise supplier tier</p>
+              <div className="text-2xl font-bold text-foreground">Verified</div>
+              <p className="text-[11px] text-muted-foreground mt-1">Authorized vendor network</p>
             </CardContent>
           </Card>
 
-          <Card className="border-border/60 bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm">
+          <Card className="border-border/60 bg-card rounded-2xl shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Catalog Items Supplied
+                Catalog Health
               </CardTitle>
               <Boxes className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">6 SKUs</div>
-              <p className="text-[11px] text-muted-foreground mt-1">Active electronics catalog</p>
+              <div className="text-2xl font-bold text-foreground">100% Active</div>
+              <p className="text-[11px] text-muted-foreground mt-1">Live inventory ready</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Orders Ready for Shipping */}
-        <Card className="border-border/60 bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm overflow-hidden">
-          <CardHeader className="border-b border-border/40 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
-                  <Truck className="h-5 w-5 text-amber-500" />
-                  Authorized Orders Awaiting Dispatch
-                </CardTitle>
-                <CardDescription className="text-xs text-muted-foreground">
-                  Confirm shipping to notify company employees and trigger tracking status
-                </CardDescription>
-              </div>
-              <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-500 border-amber-500/20">
-                {orders.length} ready
-              </Badge>
+        {/* 2-Column Summary Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Orders Ready for Dispatch */}
+          <Card className="border-border/60 bg-card rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between">
+            <div>
+              <CardHeader className="border-b border-border/40 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-amber-500" />
+                      Pending Shipping Orders
+                    </CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">
+                      Client requisitions approved and authorized for delivery
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-500 border-amber-500/20">
+                    Live Status
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {isLoading ? (
+                  <div className="p-8 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    Checking dispatch queue...
+                  </div>
+                ) : orders.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-muted-foreground">
+                    All authorized orders have been dispatched. No pending shipments in queue.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border/40">
+                    {orders.slice(0, 3).map((ord) => {
+                      const next = getNextStage(ord.status);
+                      const isDelivered = (ord.status || '').toUpperCase().includes('DELIVERED');
+
+                      return (
+                        <div key={ord.requestId} className="p-4 flex items-center justify-between gap-3 hover:bg-muted/20 transition-colors">
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-xs font-bold text-primary">#ORD-00{ord.requestId}</span>
+                              <span className="text-xs font-bold text-foreground">{ord.productName}</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">
+                              Destination: {ord.departmentName || 'Enterprise'} • Qty: {ord.requestedQuantity || 1}
+                            </p>
+                          </div>
+
+                          {isDelivered ? (
+                            <Badge variant="outline" className="h-8 px-2.5 text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                              Delivered
+                            </Badge>
+                          ) : next ? (
+                            <Button
+                              size="sm"
+                              disabled={shippingId === ord.requestId}
+                              onClick={() => handleShipOrder(ord.requestId, next.nextStatus)}
+                              className="h-8 gap-1.5 rounded-xl text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                            >
+                              {shippingId === ord.requestId ? (
+                                <Loader2 className="h-3 w-3 animate-spin" />
+                              ) : (
+                                <Send className="h-3 w-3" />
+                              )}
+                              {next.label}
+                            </Button>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {orders.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                ✨ All authorized orders have been dispatched and shipped!
-              </div>
-            ) : (
-              <div className="divide-y divide-border/40">
-                {orders.map((ord) => (
-                  <div
-                    key={ord.orderId}
-                    className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-muted/30 transition-colors"
-                  >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-primary">
-                          #ORD-00{ord.orderId}
-                        </span>
-                        <span className="text-sm font-bold text-foreground">
-                          {ord.productName}
-                        </span>
-                        <Badge variant="outline" className="text-[10px] bg-muted">
-                          Qty: {ord.quantity}
+
+            <div className="border-t border-border/40 p-4 bg-muted/10">
+              <Link
+                to="/supplier/orders"
+                className="text-xs font-semibold text-primary hover:underline flex items-center justify-center gap-1.5"
+              >
+                View Complete Orders & Shipping Records
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </Card>
+
+          {/* Quick Inventory Station */}
+          <Card className="border-border/60 bg-card rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between">
+            <div>
+              <CardHeader className="border-b border-border/40 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <Boxes className="h-4 w-4 text-primary" />
+                      Catalog Equipment Status
+                    </CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">
+                      Overview of supplied equipment inventory balances fetched from backend
+                    </CardDescription>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                    Live SKUs
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {isLoading ? (
+                  <div className="p-8 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    Loading catalog items...
+                  </div>
+                ) : products.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-muted-foreground">
+                    No products currently in catalog.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border/40">
+                    {products.slice(0, 3).map((p) => (
+                      <div key={p.productId} className="p-4 flex items-center justify-between gap-3 hover:bg-muted/20 transition-colors">
+                        <div className="space-y-0.5">
+                          <span className="text-xs font-bold text-foreground">{p.name}</span>
+                          <p className="text-[11px] text-muted-foreground font-mono">
+                            ₹{(p.price || p.pricePerProduct || 0).toLocaleString()}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                          {p.status || 'AVAILABLE'}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        Destination: <span className="text-foreground">{ord.clientDepartment}</span> • Order Date: <span className="text-foreground">{ord.orderDate}</span>
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <Button
-                        size="sm"
-                        disabled={shippingId === ord.orderId}
-                        onClick={() => handleShipOrder(ord.orderId)}
-                        className="h-9 gap-1.5 rounded-xl text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
-                      >
-                        {shippingId === ord.orderId ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Send className="h-3.5 w-3.5" />
-                        )}
-                        Approve & Ship Order
-                      </Button>
-                    </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                )}
+              </CardContent>
+            </div>
+
+            <div className="border-t border-border/40 p-4 bg-muted/10 flex items-center justify-between">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setRestockModalOpen(true)}
+                className="h-8 text-xs rounded-xl gap-1"
+              >
+                <Boxes className="h-3 w-3 text-primary" />
+                Restock Item
+              </Button>
+              <Link
+                to="/supplier/inventory"
+                className="text-xs font-semibold text-primary hover:underline flex items-center gap-1.5"
+              >
+                Manage Full Inventory
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </Card>
+        </div>
       </main>
-      <Footer />
+
+      <RestockModal
+        open={restockModalOpen}
+        onOpenChange={setRestockModalOpen}
+      />
     </div>
   );
 }

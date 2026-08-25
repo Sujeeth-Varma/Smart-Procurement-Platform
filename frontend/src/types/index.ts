@@ -1,10 +1,9 @@
 export type UserRole = 'USER' | 'ADMIN' | 'SUPPLIER';
 
-export type UserStatus = 'ACTIVE' | 'INACTIVE';
-
 export interface Department {
   departmentId: number;
   departmentName: string;
+  managerOfDepartment?: string;
   manager?: string;
 }
 
@@ -20,18 +19,26 @@ export interface UserProfile {
   phoneNumber?: string;
   designation?: string;
   role: UserRole;
-  status: UserStatus;
+  status: string;
   department?: Department;
+  createdDate?: string;
 }
 
-export interface AuthResponse {
-  message: string;
+export interface AuthState {
+  token: string | null;
+  role: UserRole | null;
+  user: UserProfile | null;
+  isAuthenticated: boolean;
+}
+
+export interface LoginResponse {
   token: string;
+  type?: string;
   role: UserRole;
   user?: UserProfile;
 }
 
-export interface RegisterRequest {
+export interface SignupRequest {
   name: string;
   email: string;
   password: string;
@@ -40,31 +47,55 @@ export interface RegisterRequest {
   departmentId: number;
 }
 
+export type AuthResponse = LoginResponse;
+export type RegisterRequest = SignupRequest;
+
 export interface Product {
   productId: number;
   name: string;
   pricePerProduct?: number;
   price?: number;
-  numberOfQuantities?: number;
   description?: string;
   status?: string;
   category?: Category;
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 export interface ProcurementRequest {
   requestId: number;
   productId?: number;
   productName?: string;
+  userName?: string;
+  userEmail?: string;
+  departmentName?: string;
   requestedQuantity?: number;
   quantity?: number;
   pricePerUnit?: number;
   totalPrice?: number;
+  categoryName?: string;
   description?: string;
-  status: 'PENDING_FOR_APPROVAL' | 'ACTIVE' | 'CLOSED';
+  status: string;
   createdDate?: string;
   updatedDate?: string;
-  userEmail?: string;
-  departmentName?: string;
+  message?: string;
+}
+
+export interface RequestTrackingRecord {
+  trackingId: number;
+  productId?: number;
+  productName?: string;
+  status: string;
+  remarks: string;
+  actionTimestamp: string;
+  actionBy?: {
+    userId?: number;
+    name?: string;
+    email?: string;
+    role?: string;
+    designation?: string;
+  };
+  actionByName?: string;
 }
 
 export interface Supplier {
@@ -73,7 +104,60 @@ export interface Supplier {
   email: string;
   phone?: string;
   address?: string;
+  accountNumber?: string;
+  bankName?: string;
   gstNumber?: string;
   status?: string;
   rating?: number;
+  feedback?: string;
+  products?: Product[];
+}
+
+export interface PaymentRecord {
+  paymentId: number;
+  requestId: number;
+  productName?: string;
+  adminUserId?: number;
+  adminEmail?: string;
+  adminName?: string;
+  requestUserId?: number;
+  requestUserEmail?: string;
+  requestUserName?: string;
+  supplierId?: number;
+  supplierName?: string;
+  supplierAccountNumber?: string;
+  amount: number;
+  cardNumber?: string;
+  cardHolderName?: string;
+  paymentStatus?: string;
+  status?: string;
+  transactionDate?: string;
+  paymentDate?: string;
+  remarks?: string;
+  message?: string;
+}
+
+export interface ProductReviewRequest {
+  requestId: number;
+  rating: number;
+  comment?: string;
+}
+
+export interface ProductReviewResponse {
+  reviewId: number;
+  requestId: number;
+  productId: number;
+  productName: string;
+  userName: string;
+  userEmail: string;
+  rating: number;
+  comment: string;
+  createdDate: string;
+}
+
+export interface ProductRatingSummary {
+  productId: number;
+  productName: string;
+  averageRating: number;
+  totalReviews: number;
 }

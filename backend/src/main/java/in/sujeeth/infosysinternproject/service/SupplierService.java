@@ -83,6 +83,14 @@ public class SupplierService {
             throw new BadRequestException("Order status cannot be updated before payment is completed by Admin");
         }
 
+        if (req.getStatus() == ProductStatus.DELIVERED) {
+            throw new BadRequestException("Order #" + requestId + " is already DELIVERED and finalized. No further status updates are allowed.");
+        }
+
+        if (req.getStatus() == targetStatus) {
+            throw new BadRequestException("Order #" + requestId + " is already in status '" + targetStatus.name() + "'. Duplicate status update not allowed.");
+        }
+
         Supplier supplier = null;
         if (supplierEmail != null && !supplierEmail.trim().isEmpty()) {
             supplier = supplierRepository.findByEmail(supplierEmail)
@@ -159,13 +167,28 @@ public class SupplierService {
         return updateOrderStatus(requestId, dto, supplierEmail);
     }
 
-    @Transactional
-    public ProcurementRequestResponseDto acceptOrderPayment(Long requestId, String supplierEmail) {
-        SupplierOrderStatusUpdateDto dto = SupplierOrderStatusUpdateDto.builder()
-                .status(ProductStatus.ORDER_RECEIVED)
-                .remarks("Order received and payment accepted by Supplier")
-                .build();
-        return updateOrderStatus(requestId, dto, supplierEmail);
+    public List<ProcurementRequestResponseDto> getOrdersForSupplier(String supplierEmail) {
+        log.info("Fetching orders for supplier email: {}", supplierEmail);
+        Supplier supplier = null;
+        if (supplierEmail != null && !supplierEmail.trim().isEmpty()) {
+            supplier = supplierRepository.findByEmail(supplierEmail)
+                    .orElseGet(() -> {
+                        User u = userRepository.findByEmail(supplierEmail).orElse(null);
+                        return u != null ? supplierRepository.findByUserUserId(u.getUserId()).orElse(null) : null;
+                    });
+        }
+
+        List<Payment> payments;
+        if (supplier != null) {
+            payments = paymentRepository.findBySupplierSupplierIdOrderByTransactionDateDesc(supplier.getSupplierId());
+        } else {
+            payments = paymentRepository.findAll();
+        }
+
+        return payments.stream()
+                .filter(p -> p.getProcurementRequest() != null)
+                .map(p -> productService.mapProcurementRequestToDto(p.getProcurementRequest(), null))
+                .collect(Collectors.toList());
     }
 
     public SupplierDto mapToSupplierDto(Supplier supplier) {

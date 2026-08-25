@@ -62,11 +62,8 @@ export function Navbar() {
             <Boxes className="h-5 w-5" />
           </motion.div>
           <div className="flex flex-col">
-            <span className="text-base font-bold tracking-tight text-foreground flex items-center gap-1.5">
+            <span className="text-base font-bold tracking-tight text-foreground">
               Procure<span className="text-primary">Flow</span>
-              <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                AI SaaS
-              </span>
             </span>
             <span className="text-[11px] text-muted-foreground -mt-0.5">
               Enterprise Procurement

@@ -1,6 +1,5 @@
 import { Link } from 'react-router';
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, ArrowLeft, Home } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -43,7 +42,6 @@ export function UnauthorizedPage() {
           </div>
         </motion.div>
       </main>
-      <Footer />
     </div>
   );
 }

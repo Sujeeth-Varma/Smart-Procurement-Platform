@@ -16,5 +16,9 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     List<Payment> findByAdminUserUserIdOrderByTransactionDateDesc(Long adminId);
 
+    List<Payment> findBySupplierSupplierIdOrderByTransactionDateDesc(Long supplierId);
+
+    List<Payment> findBySupplierEmailOrderByTransactionDateDesc(String email);
+
     Optional<Payment> findByProcurementRequestRequestId(Long requestId);
 }

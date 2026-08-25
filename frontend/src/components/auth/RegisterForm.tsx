@@ -33,15 +33,8 @@ export function RegisterForm() {
         if (depts && depts.length > 0) {
           setDepartmentId(depts[0].departmentId);
         }
-      } catch (err: any) {
-        // Fallback default departments if backend is starting up
-        setDepartments([
-          { departmentId: 1, departmentName: 'IT', manager: 'Aditya' },
-          { departmentId: 2, departmentName: 'HR', manager: 'Priya' },
-          { departmentId: 3, departmentName: 'Testing', manager: 'Rohan' },
-          { departmentId: 4, departmentName: 'Procurement', manager: 'Suresh' },
-        ]);
-        setDepartmentId(1);
+      } catch {
+        setDepartments([]);
       } finally {
         setIsLoadingDepts(false);
       }
@@ -185,7 +178,7 @@ export function RegisterForm() {
                 >
                   {departments.map((d) => (
                     <option key={d.departmentId} value={d.departmentId} className="bg-card text-card-foreground">
-                      {d.departmentName} {d.manager ? `(${d.manager})` : ''}
+                      {d.departmentName}
                     </option>
                   ))}
                 </select>

@@ -1,5 +1,4 @@
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { motion } from 'motion/react';
 
@@ -18,7 +17,6 @@ export function RegisterPage() {
           <RegisterForm />
         </motion.div>
       </main>
-      <Footer />
     </div>
   );
 }

@@ -97,6 +97,20 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    public List<ProcurementRequestResponseDto> getApprovedRequests() {
+        return procurementRequestRepository.findByStatus(ProductStatus.APPROVED)
+                .stream()
+                .map(req -> mapProcurementRequestToDto(req, null))
+                .collect(Collectors.toList());
+    }
+
+    public List<ProcurementRequestResponseDto> getAllProcurementRequests() {
+        return procurementRequestRepository.findAll()
+                .stream()
+                .map(req -> mapProcurementRequestToDto(req, null))
+                .collect(Collectors.toList());
+    }
+
     public List<ProductDto> getActiveProducts() {
         return productRepository.findByStatus(ProductStatus.ACTIVE)
                 .stream()
@@ -239,7 +253,15 @@ public class ProductService {
     public List<RequestTrackingDto> getRequestTrackingHistory(Long requestId) {
         List<RequestTracking> trackingList = requestTrackingRepository.findByProcurementRequestRequestIdOrderByActionTimestampAsc(requestId);
         if (!trackingList.isEmpty()) {
-            return trackingList.stream().map(this::mapToTrackingDto).collect(Collectors.toList());
+            java.util.List<RequestTrackingDto> dtos = new java.util.ArrayList<>();
+            ProductStatus lastStatus = null;
+            for (RequestTracking t : trackingList) {
+                if (t.getStatus() != lastStatus) {
+                    dtos.add(mapToTrackingDto(t));
+                    lastStatus = t.getStatus();
+                }
+            }
+            return dtos;
         }
 
         if (!productRepository.existsById(requestId) && !procurementRequestRepository.existsById(requestId)) {

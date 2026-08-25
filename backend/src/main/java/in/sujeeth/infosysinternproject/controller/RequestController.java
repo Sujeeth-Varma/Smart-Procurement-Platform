@@ -42,6 +42,18 @@ public class RequestController {
         return ResponseEntity.ok(productService.getPendingProducts());
     }
 
+    @GetMapping("/request/approved")
+    public ResponseEntity<List<ProcurementRequestResponseDto>> getApprovedRequests() {
+        log.info("REST request to get approved procurement requests awaiting payment");
+        return ResponseEntity.ok(productService.getApprovedRequests());
+    }
+
+    @GetMapping("/request/all")
+    public ResponseEntity<List<ProcurementRequestResponseDto>> getAllRequests() {
+        log.info("REST request to get all procurement requests");
+        return ResponseEntity.ok(productService.getAllProcurementRequests());
+    }
+
     @GetMapping("/request/status")
     public ResponseEntity<ProcurementRequestResponseDto> getRequestStatus(
             @RequestParam("requestId") Long requestId

@@ -49,7 +49,7 @@ export function LoginForm() {
         status: 'ACTIVE',
       });
 
-      toast.success(res.message || `Login successful as ${res.role}`);
+      toast.success(`Login successful as ${res.role}! Welcome back.`);
 
       // Determine redirect path
       let targetPath = from;

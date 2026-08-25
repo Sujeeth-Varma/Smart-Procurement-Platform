@@ -1,5 +1,4 @@
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { motion } from 'motion/react';
 
@@ -18,7 +17,6 @@ export function LoginPage() {
           <LoginForm />
         </motion.div>
       </main>
-      <Footer />
     </div>
   );
 }
