@@ -41,6 +41,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .requestMatchers("/api/departments", "/api/categories", "/api/suppliers/**", "/api/supplier/**").authenticated()
                 .requestMatchers("/api/products").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN", "USER", "ADMIN", "ROLE_SUPPLIER", "SUPPLIER")
+                .requestMatchers("/api/reviews/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN", "USER", "ADMIN", "ROLE_SUPPLIER", "SUPPLIER")
                 .requestMatchers("/api/raise-req").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN", "USER", "ADMIN")
                 .requestMatchers("/api/users/**", "/api/request/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")
                 .anyRequest().authenticated()
