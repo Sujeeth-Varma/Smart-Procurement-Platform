@@ -54,12 +54,17 @@ export function AdminPaymentsPage() {
     setPaymentModalOpen(true);
   };
 
-  const handleExportCsv = () => {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportCsv = async () => {
     try {
-      window.open('/api/payment/history?exportCsv=true', '_blank');
-      toast.success('Downloading payments ledger CSV...');
-    } catch {
-      toast.error('Failed to export CSV');
+      setIsExporting(true);
+      await adminApi.downloadPaymentHistoryCsv();
+      toast.success('Downloaded payments ledger CSV');
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to export CSV');
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -93,10 +98,15 @@ export function AdminPaymentsPage() {
               variant="outline"
               size="sm"
               onClick={handleExportCsv}
+              disabled={isExporting}
               className="gap-1.5 rounded-xl text-xs"
             >
-              <Download className="h-3.5 w-3.5" />
-              Export CSV
+              {isExporting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Download className="h-3.5 w-3.5" />
+              )}
+              {isExporting ? 'Exporting...' : 'Export CSV'}
             </Button>
 
             <Button

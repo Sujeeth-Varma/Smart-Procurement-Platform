@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, downloadFile } from './client';
 import type {
   Category,
   Department,
@@ -51,6 +51,10 @@ export const procurementApi = {
 
   getUserPayments: async (exportCsv: boolean = false): Promise<PaymentRecord[]> => {
     return apiClient<PaymentRecord[]>(`/api/payment/user${exportCsv ? '?exportCsv=true' : ''}`);
+  },
+
+  downloadUserPaymentsCsv: async (): Promise<void> => {
+    return downloadFile('/api/payment/user?exportCsv=true', 'user_payment_history.csv');
   },
 
   // Reviews & Ratings

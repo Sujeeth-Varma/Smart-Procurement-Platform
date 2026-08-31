@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, downloadFile } from './client';
 import type { PaymentRecord, ProcurementRequest, Supplier, UserProfile } from '@/types';
 
 export interface ProcessPaymentPayload {
@@ -62,6 +62,10 @@ export const adminApi = {
 
   getPaymentHistory: async (exportCsv: boolean = false): Promise<PaymentRecord[]> => {
     return apiClient<PaymentRecord[]>(`/api/payment/history${exportCsv ? '?exportCsv=true' : ''}`);
+  },
+
+  downloadPaymentHistoryCsv: async (): Promise<void> => {
+    return downloadFile('/api/payment/history?exportCsv=true', 'payment_history.csv');
   },
 
   getPaymentByRequestId: async (requestId: number): Promise<PaymentRecord> => {
