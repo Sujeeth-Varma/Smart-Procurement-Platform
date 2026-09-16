@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router';
 import { Navbar } from '@/components/layout/Navbar';
 import { supplierApi } from '@/api/supplier';
+import { TrackingModal } from '@/components/modals/TrackingModal';
 import type { ProcurementRequest } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,7 @@ import {
   PackageCheck,
   Package,
   Loader2,
+  History,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,6 +23,9 @@ export function SupplierOrdersPage() {
   const [orders, setOrders] = useState<ProcurementRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+
+  const [trackingId, setTrackingId] = useState<number | null>(null);
+  const [trackingOpen, setTrackingOpen] = useState(false);
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -220,8 +225,22 @@ export function SupplierOrdersPage() {
                         )}
                       </div>
 
-                      <div className="flex items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-3 sm:pt-0 border-border/30">
-                        <div className="mr-2">{getStatusBadge(ord.status)}</div>
+                      <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 border-t sm:border-t-0 pt-3 sm:pt-0 border-border/30">
+                        <div className="mr-1">{getStatusBadge(ord.status)}</div>
+
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setTrackingId(ord.requestId);
+                            setTrackingOpen(true);
+                          }}
+                          className="h-8 gap-1 px-2.5 text-xs text-muted-foreground hover:text-foreground border-border/60 rounded-xl"
+                          title="View Audit Trail"
+                        >
+                          <History className="h-3.5 w-3.5" />
+                          Audit Trail
+                        </Button>
 
                         {isDelivered ? (
                           <Badge variant="outline" className="h-8 px-3 text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
@@ -252,6 +271,12 @@ export function SupplierOrdersPage() {
           </CardContent>
         </Card>
       </main>
+
+      <TrackingModal
+        open={trackingOpen}
+        onOpenChange={setTrackingOpen}
+        requestId={trackingId}
+      />
     </div>
   );
 }

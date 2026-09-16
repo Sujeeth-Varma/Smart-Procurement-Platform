@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/useAuthStore';
 import { procurementApi } from '@/api/procurement';
 import { supplierApi } from '@/api/supplier';
 import { RestockModal } from '@/components/modals/RestockModal';
+import { TrackingModal } from '@/components/modals/TrackingModal';
 import type { Product, ProcurementRequest } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +20,7 @@ import {
   Loader2,
   ArrowRight,
   Sparkles,
+  History,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,6 +31,9 @@ export function SupplierDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [shippingId, setShippingId] = useState<number | null>(null);
   const [restockModalOpen, setRestockModalOpen] = useState(false);
+
+  const [trackingId, setTrackingId] = useState<number | null>(null);
+  const [trackingOpen, setTrackingOpen] = useState(false);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -225,26 +230,41 @@ export function SupplierDashboard() {
                             </p>
                           </div>
 
-                          {isDelivered ? (
-                            <Badge variant="outline" className="h-8 px-2.5 text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                              Delivered
-                            </Badge>
-                          ) : next ? (
+                          <div className="flex items-center gap-1.5">
                             <Button
                               size="sm"
-                              disabled={shippingId === ord.requestId}
-                              onClick={() => handleShipOrder(ord.requestId, next.nextStatus)}
-                              className="h-8 gap-1.5 rounded-xl text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setTrackingId(ord.requestId);
+                                setTrackingOpen(true);
+                              }}
+                              className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                              title="View Audit Trail"
                             >
-                              {shippingId === ord.requestId ? (
-                                <Loader2 className="h-3 w-3 animate-spin" />
-                              ) : (
-                                <Send className="h-3 w-3" />
-                              )}
-                              {next.label}
+                              <History className="h-3.5 w-3.5" />
                             </Button>
-                          ) : null}
+
+                            {isDelivered ? (
+                              <Badge variant="outline" className="h-8 px-2.5 text-xs bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                                <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                                Delivered
+                              </Badge>
+                            ) : next ? (
+                              <Button
+                                size="sm"
+                                disabled={shippingId === ord.requestId}
+                                onClick={() => handleShipOrder(ord.requestId, next.nextStatus)}
+                                className="h-8 gap-1.5 rounded-xl text-xs bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+                              >
+                                {shippingId === ord.requestId ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <Send className="h-3 w-3" />
+                                )}
+                                {next.label}
+                              </Button>
+                            ) : null}
+                          </div>
                         </div>
                       );
                     })}
@@ -338,6 +358,11 @@ export function SupplierDashboard() {
       <RestockModal
         open={restockModalOpen}
         onOpenChange={setRestockModalOpen}
+      />
+      <TrackingModal
+        open={trackingOpen}
+        onOpenChange={setTrackingOpen}
+        requestId={trackingId}
       />
     </div>
   );
