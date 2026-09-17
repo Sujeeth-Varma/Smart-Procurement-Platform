@@ -205,20 +205,21 @@ infosys-project/
 
 ---
 
-## Seed Credentials & Test Data
+## Seed Credentials & Initial Database Loading
 
-### System Administrator Account
-- **Email**: `infosys.procurement.project.admin@gmail.com`
-- **Password**: `Admin@123`
+All initial account credentials are automatically populated from `backend/.env` during the first database load (when no admin user exists in the database).
 
-### Sample Employee Account
-- **Email**: `sjvarma27@gmail.com` (or register a new user at `/register`)
-- **Password**: `Pass@123`
+| Account Role | Environment Variable Keys | Source |
+|---|---|---|
+| **System Administrator** | `SEED_ADMIN_EMAIL`, `SEED_ADMIN_PASSWORD` | Configured in `backend/.env` |
+| **Sample Employee** | `SEED_USER_EMAIL`, `SEED_USER_PASSWORD` | Configured in `backend/.env` |
+| **Supplier: TechSource** | `SEED_SUPPLIER_TECHSOURCE_EMAIL`, `SEED_SUPPLIER_PASSWORD` | Configured in `backend/.env` |
+| **Supplier: ErgoComfort** | `SEED_SUPPLIER_ERGOCOMFORT_EMAIL`, `SEED_SUPPLIER_PASSWORD` | Configured in `backend/.env` |
+| **Supplier: OfficeDepot** | `SEED_SUPPLIER_OFFICEDEPOT_EMAIL`, `SEED_SUPPLIER_PASSWORD` | Configured in `backend/.env` |
+| **Supplier: CloudTech** | `SEED_SUPPLIER_CLOUDTECH_EMAIL`, `SEED_SUPPLIER_PASSWORD` | Configured in `backend/.env` |
 
-### Verified Supplier Accounts
-- **TechSource Electronics**: `sujeethvarma27@gmail.com` / `Supplier@123`
-- **ErgoComfort Furniture**: `contact@ergocomfort.in` / `Supplier@123`
-- **OfficeDepot Stationeries**: `support@officedepot.in` / `Supplier@123`
+> [!NOTE]
+> `DataInitializer` checks if an admin user already exists. If an admin is present in the database, initial seed data generation is skipped.
 
 ### Demo Corporate Payment Card
 ```json
@@ -241,22 +242,56 @@ infosys-project/
 - MySQL Server 8.0 or higher
 - Maven 3.9+ (or use included `./mvnw`)
 
-### 1. Database Configuration
-Ensure MySQL service is running on `localhost:3306`. Configure database properties in `backend/src/main/resources/application.yml`:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/procurement_db?createDatabaseIfNotExist=true
-    username: root
-    password: YourPasswordHere
-```
-
-### 2. Start Backend Application
-Navigate to the `backend` directory and execute the Spring Boot application:
+### 1. Environment Configuration (.env)
+Create a `.env` file in the `backend/` directory (you can copy from `.env.example`):
 
 ```bash
 cd backend
+cp .env.example .env
+```
+
+Edit `backend/.env` with your actual database, SMTP mail, and JWT secret credentials:
+
+```env
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=procurement_db
+DB_USERNAME=root
+DB_PASSWORD=your_db_password
+
+# Mail Configuration
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your_email@gmail.com
+MAIL_PASSWORD=your_app_password
+
+# Security Configuration
+JWT_SECRET=your_jwt_base64_secret_key
+
+# Server Configuration
+SERVER_PORT=8080
+
+# Initial Seed Data Configuration
+SEED_ADMIN_EMAIL=admin@example.com
+SEED_ADMIN_PASSWORD=AdminPassword123
+
+SEED_USER_EMAIL=user@example.com
+SEED_USER_PASSWORD=UserPassword123
+
+SEED_SUPPLIER_PASSWORD=SupplierPassword123
+SEED_SUPPLIER_TECHSOURCE_EMAIL=supplier1@example.com
+SEED_SUPPLIER_ERGOCOMFORT_EMAIL=supplier2@example.com
+SEED_SUPPLIER_OFFICEDEPOT_EMAIL=supplier3@example.com
+SEED_SUPPLIER_CLOUDTECH_EMAIL=supplier4@example.com
+```
+
+### 2. Start Backend Application
+Export the `.env` variables to your terminal session and execute the Spring Boot application:
+
+```bash
+cd backend
+export $(grep -v '^#' .env | xargs)
 ./mvnw spring-boot:run
 ```
 

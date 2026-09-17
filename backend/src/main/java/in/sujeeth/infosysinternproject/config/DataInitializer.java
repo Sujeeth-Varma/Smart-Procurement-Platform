@@ -8,6 +8,7 @@ import in.sujeeth.infosysinternproject.repository.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -34,13 +35,48 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
     private final JdbcTemplate jdbcTemplate;
 
+    @Value("${seed.admin.email}")
+    private String adminEmail;
+
+    @Value("${seed.admin.password}")
+    private String adminPassword;
+
+    @Value("${seed.user.email}")
+    private String userEmail;
+
+    @Value("${seed.user.password}")
+    private String userPassword;
+
+    @Value("${seed.supplier.password}")
+    private String supplierPassword;
+
+    @Value("${seed.supplier.techsource-email}")
+    private String techsourceEmail;
+
+    @Value("${seed.supplier.ergocomfort-email}")
+    private String ergocomfortEmail;
+
+    @Value("${seed.supplier.officedepot-email}")
+    private String officedepotEmail;
+
+    @Value("${seed.supplier.cloudtech-email}")
+    private String cloudtechEmail;
+
     @Override
     @Transactional
     public void run(String... args) throws Exception {
         fixStatusColumnLengths();
+
+        if (userRepository.existsByEmail(adminEmail) || !userRepository.findByRole(Role.ADMIN).isEmpty()) {
+            log.info("Admin user already exists. Skipping initial seed data creation.");
+            return;
+        }
+
+        log.info("First database load detected. Seeding default departments, categories, users, and suppliers...");
         seedDepartments();
         seedCategories();
         User admin = seedSingleAdminUser();
+        seedSampleEmployeeUser();
         seedApprovalHierarchy();
         seedDemoProductsAndSuppliers(admin);
     }
@@ -85,14 +121,13 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private User seedSingleAdminUser() {
-        String adminEmail = "infosys.procurement.project.admin@gmail.com";
         return userRepository.findByEmail(adminEmail).orElseGet(() -> {
             Department procurementDept = departmentRepository.findByDepartmentName("Procurement").orElse(null);
 
             User admin = User.builder()
                     .name("Single System Administrator")
                     .email(adminEmail)
-                    .password(passwordEncoder.encode("Admin@123"))
+                    .password(passwordEncoder.encode(adminPassword))
                     .phoneNumber("9999999999")
                     .designation("Head of Procurement")
                     .role(Role.ADMIN)
@@ -101,6 +136,25 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
 
             return userRepository.save(admin);
+        });
+    }
+
+    private User seedSampleEmployeeUser() {
+        return userRepository.findByEmail(userEmail).orElseGet(() -> {
+            Department itDept = departmentRepository.findByDepartmentName("IT").orElse(null);
+
+            User employee = User.builder()
+                    .name("Sample Employee User")
+                    .email(userEmail)
+                    .password(passwordEncoder.encode(userPassword))
+                    .phoneNumber("9876543210")
+                    .designation("Senior Software Engineer")
+                    .role(Role.USER)
+                    .status(UserStatus.ACTIVE)
+                    .department(itDept)
+                    .build();
+
+            return userRepository.save(employee);
         });
     }
 
@@ -244,10 +298,10 @@ public class DataInitializer implements CommandLineRunner {
             Product hub = productRepository.findFirstByNameIgnoreCaseAndStatus("USB-C Multiport Hub", ProductStatus.ACTIVE).orElse(null);
 
             // Supplier 1: TechSource Electronics
-            User sup1User = userRepository.findByEmail("sujeethvarma27@gmail.com").orElseGet(() -> userRepository.save(User.builder()
+            User sup1User = userRepository.findByEmail(techsourceEmail).orElseGet(() -> userRepository.save(User.builder()
                     .name("TechSource Electronics Pvt Ltd")
-                    .email("sujeethvarma27@gmail.com")
-                    .password(passwordEncoder.encode("Supplier@123"))
+                    .email(techsourceEmail)
+                    .password(passwordEncoder.encode(supplierPassword))
                     .phoneNumber("1800-111-2222")
                     .designation("Authorized Vendor Account")
                     .role(Role.SUPPLIER)
@@ -261,7 +315,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name("TechSource Electronics Pvt Ltd")
                     .phone("1800-111-2222")
                     .address("Bengaluru Tech Park, Karnataka, India")
-                    .email("sujeethvarma27@gmail.com")
+                    .email(techsourceEmail)
                     .accountNumber("ACC-1001-TECH")
                     .bankName("HDFC Bank")
                     .gstNumber("29TECHSRC1001Z1")
@@ -272,10 +326,10 @@ public class DataInitializer implements CommandLineRunner {
             supplierRepository.save(supplier1);
 
             // Supplier 2: ErgoComfort Furniture
-            User sup2User = userRepository.findByEmail("contact@ergocomfort.in").orElseGet(() -> userRepository.save(User.builder()
+            User sup2User = userRepository.findByEmail(ergocomfortEmail).orElseGet(() -> userRepository.save(User.builder()
                     .name("ErgoComfort Furniture Ltd")
-                    .email("contact@ergocomfort.in")
-                    .password(passwordEncoder.encode("Supplier@123"))
+                    .email(ergocomfortEmail)
+                    .password(passwordEncoder.encode(supplierPassword))
                     .phoneNumber("1800-333-4444")
                     .designation("Furniture Vendor Account")
                     .role(Role.SUPPLIER)
@@ -289,7 +343,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name("ErgoComfort Furniture Ltd")
                     .phone("1800-333-4444")
                     .address("Mumbai Industrial Area, Maharashtra, India")
-                    .email("contact@ergocomfort.in")
+                    .email(ergocomfortEmail)
                     .accountNumber("ACC-2002-ERGO")
                     .bankName("ICICI Bank")
                     .gstNumber("27ERGOCMF2002Z2")
@@ -300,10 +354,10 @@ public class DataInitializer implements CommandLineRunner {
             supplierRepository.save(supplier2);
 
             // Supplier 3: OfficeDepot Stationeries
-            User sup3User = userRepository.findByEmail("support@officedepot.in").orElseGet(() -> userRepository.save(User.builder()
+            User sup3User = userRepository.findByEmail(officedepotEmail).orElseGet(() -> userRepository.save(User.builder()
                     .name("OfficeDepot Stationeries")
-                    .email("support@officedepot.in")
-                    .password(passwordEncoder.encode("Supplier@123"))
+                    .email(officedepotEmail)
+                    .password(passwordEncoder.encode(supplierPassword))
                     .phoneNumber("1800-555-6666")
                     .designation("Office Supplies Vendor Account")
                     .role(Role.SUPPLIER)
@@ -317,7 +371,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name("OfficeDepot Stationeries")
                     .phone("1800-555-6666")
                     .address("New Delhi Commercial Hub, India")
-                    .email("support@officedepot.in")
+                    .email(officedepotEmail)
                     .accountNumber("ACC-3003-OFF")
                     .bankName("State Bank of India")
                     .gstNumber("07OFFDPT3003Z3")
@@ -328,10 +382,10 @@ public class DataInitializer implements CommandLineRunner {
             supplierRepository.save(supplier3);
 
             // Supplier 4: CloudTech Peripherals
-            User sup4User = userRepository.findByEmail("info@cloudtech.in").orElseGet(() -> userRepository.save(User.builder()
+            User sup4User = userRepository.findByEmail(cloudtechEmail).orElseGet(() -> userRepository.save(User.builder()
                     .name("CloudTech Peripherals Ltd")
-                    .email("info@cloudtech.in")
-                    .password(passwordEncoder.encode("Supplier@123"))
+                    .email(cloudtechEmail)
+                    .password(passwordEncoder.encode(supplierPassword))
                     .phoneNumber("1800-777-8888")
                     .designation("Peripherals Vendor Account")
                     .role(Role.SUPPLIER)
@@ -345,7 +399,7 @@ public class DataInitializer implements CommandLineRunner {
                     .name("CloudTech Peripherals Ltd")
                     .phone("1800-777-8888")
                     .address("Hyderabad IT Hub, Telangana, India")
-                    .email("info@cloudtech.in")
+                    .email(cloudtechEmail)
                     .accountNumber("ACC-4004-CLD")
                     .bankName("Axis Bank")
                     .gstNumber("36CLDTECH4004Z4")
